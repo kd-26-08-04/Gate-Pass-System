@@ -1,0 +1,36 @@
+{
+  "name": "gate-pass-mobile",
+  "version": "1.0.0",
+  "main": "App.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^14.0.0",
+    "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-community/datetimepicker": "8.4.1",
+    "@react-native-picker/picker": "2.11.1",
+    "@react-navigation/bottom-tabs": "^6.5.11",
+    "@react-navigation/native": "^6.1.9",
+    "@react-navigation/native-stack": "^6.9.17",
+    "axios": "^1.6.0",
+    "expo": "~53.0.0",
+    "expo-constants": "~17.1.7",
+    "expo-device": "~7.1.4",
+    "expo-linear-gradient": "~14.1.5",
+    "expo-notifications": "~0.31.4",
+    "expo-status-bar": "~2.2.3",
+    "react": "19.0.0",
+    "react-native": "0.79.5",
+    "react-native-paper": "^5.11.6",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1",
+    "react-native-toast-message": "^2.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0"
+  }
+}

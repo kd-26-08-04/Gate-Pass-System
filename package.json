@@ -1,0 +1,38 @@
+{
+  "name": "gate-pass-system",
+  "version": "1.0.0",
+  "description": "Gate Pass Management System - Mobile App for Students and HODs",
+  "main": "Backend/server.js",
+  "scripts": {
+    "start": "cd Backend && node server.js",
+    "dev": "cd Backend && nodemon server.js",
+    "server": "cd Backend && nodemon server.js",
+    "mobile": "cd mobile-app && npm start",
+    "install-mobile": "cd mobile-app && npm install",
+    "install-backend": "cd Backend && npm install",
+    "setup": "npm run install-backend && npm run install-mobile"
+  },
+  "keywords": [
+    "gate-pass",
+    "student-management",
+    "react-native",
+    "mobile-app",
+    "expo",
+    "nodejs"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.5.0",
+    "validator": "^13.11.0"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "^19.1.0",
+    "nodemon": "^3.0.1"
+  }
+}
