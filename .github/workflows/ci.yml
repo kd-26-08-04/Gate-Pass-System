@@ -1,0 +1,151 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:4.4
+        ports:
+          - 27017:27017
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        cache: 'npm'
+        cache-dependency-path: Backend/package-lock.json
+    
+    - name: Install Backend Dependencies
+      run: |
+        cd Backend
+        npm ci
+    
+    - name: Create Backend .env file
+      run: |
+        cd Backend
+        echo "PORT=5000" > .env
+        echo "MONGODB_URI=mongodb://localhost:27017/gatepass_test" >> .env
+        echo "JWT_SECRET=test_jwt_secret_key" >> .env
+        echo "NODE_ENV=test" >> .env
+        echo "FRONTEND_URL=http://localhost:3000" >> .env
+    
+    - name: Run Backend Tests
+      run: |
+        cd Backend
+        npm test
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/gatepass_test
+
+  mobile-app-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        cache: 'npm'
+        cache-dependency-path: mobile-app/package-lock.json
+    
+    - name: Setup Expo CLI
+      run: npm install -g @expo/cli
+    
+    - name: Install Mobile App Dependencies
+      run: |
+        cd mobile-app
+        npm ci
+    
+    - name: Check Mobile App Build
+      run: |
+        cd mobile-app
+        npx expo export --platform all
+    
+    - name: Run Mobile App Tests
+      run: |
+        cd mobile-app
+        npm test
+      if: success()
+
+  lint-and-format:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+    
+    - name: Install ESLint
+      run: npm install -g eslint
+    
+    - name: Lint Backend Code
+      run: |
+        cd Backend
+        npm install
+        npx eslint . --ext .js --ignore-path ../.gitignore || true
+    
+    - name: Lint Mobile App Code
+      run: |
+        cd mobile-app
+        npm install
+        npx eslint . --ext .js,.jsx --ignore-path ../.gitignore || true
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run Security Audit - Backend
+      run: |
+        cd Backend
+        npm audit --audit-level moderate || true
+    
+    - name: Run Security Audit - Mobile App
+      run: |
+        cd mobile-app
+        npm audit --audit-level moderate || true
+
+  deploy-staging:
+    needs: [backend-test, mobile-app-build, lint-and-format]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to Staging
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        echo "This would deploy to your staging server"
+        # Add your staging deployment commands here
+
+  deploy-production:
+    needs: [backend-test, mobile-app-build, lint-and-format]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to Production
+      run: |
+        echo "🚀 Deploying to production environment..."
+        echo "This would deploy to your production server"
+        # Add your production deployment commands here
