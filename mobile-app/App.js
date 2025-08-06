@@ -1,8 +1,10 @@
+import 'react-native-url-polyfill/auto';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
+import { StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 import { AuthProvider } from './src/context/AuthContext';

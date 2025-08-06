@@ -1,9 +1,47 @@
 import axios from 'axios';
+import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Backend API Configuration
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+
+// URL Polyfill for Hermes
+if (!global.URL) {
+  global.URL = class URL {
+    constructor(url) {
+      // Simple URL parsing for basic cases
+      this.href = url;
+      const match = url.match(/^(https?:)\/\/([^\/]+)(\/.*)?$/);
+      if (match) {
+        this.protocol = match[1];
+        this.host = match[2];
+        this.pathname = match[3] || '/';
+      } else {
+        this.protocol = '';
+        this.host = '';
+        this.pathname = url;
+      }
+    }
+  };
+}
+
+if (!global.URLSearchParams) {
+  global.URLSearchParams = class URLSearchParams {
+    constructor(params) {
+      this.params = new Map();
+      if (typeof params === 'string') {
+        const pairs = params.split('&');
+        pairs.forEach(pair => {
+          const [key, value] = pair.split('=');
+          if (key) this.params.set(decodeURIComponent(key), decodeURIComponent(value || ''));
+        });
+      }
+    }
+    get(key) { return this.params.get(key); }
+    set(key, value) { this.params.set(key, value); }
+  };
+}
 
 // Get the local IP address for development
 const getApiUrl = () => {
@@ -13,8 +51,41 @@ const getApiUrl = () => {
     if (Platform.OS === 'web') {
       return 'http://localhost:5000/api';
     }
-    // For mobile development, use static IP to avoid Constants.expoConfig issues
-    return 'http://192.168.1.100:5000/api';
+    
+    // For mobile development, try multiple approaches to get host IP
+    try {
+      // Try to get host URI from different possible Constants locations
+      let hostUri = null;
+      
+      // Try modern Expo SDK approach
+      if (Constants.expoConfig?.hostUri) {
+        hostUri = Constants.expoConfig.hostUri;
+      }
+      // Try legacy manifest approach
+      else if (Constants.manifest?.debuggerHost) {
+        hostUri = Constants.manifest.debuggerHost;
+      }
+      // Try legacy hostUri
+      else if (Constants.manifest?.hostUri) {
+        hostUri = Constants.manifest.hostUri;
+      }
+      
+      if (hostUri && typeof hostUri === 'string') {
+        const host = hostUri.split(':')[0];
+        console.log('Using host from Constants:', host);
+        return `http://${host}:5000/api`;
+      }
+    } catch (error) {
+      console.warn('Could not get host URI from Constants:', error);
+    }
+    
+    // Fallback to platform-specific defaults
+    const fallbackUrl = Platform.OS === 'android' 
+      ? 'http://192.168.43.211:5000/api'  // Android emulator localhost
+      : 'http://192.168.43.211:5000/api'; // Default LAN IP (change this to your actual IP)
+      
+    console.log('Using fallback URL:', fallbackUrl);
+    return fallbackUrl;
   }
   // Production URL
   return 'https://your-backend-domain.com/api';
