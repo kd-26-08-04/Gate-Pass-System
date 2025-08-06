@@ -140,7 +140,8 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
   register: (userData) => api.post('/auth/register', userData),
-  verifyToken: () => api.get('/auth/verify'),
+  verifyToken: () => api.get('/auth/me'),
+  testConnection: () => api.get('/health'),
 };
 
 // Gate Pass API endpoints
@@ -149,18 +150,35 @@ export const gatePassAPI = {
   createGatePass: (gatePassData) => api.post('/gatepass/create', gatePassData),
   getMyGatePasses: () => api.get('/gatepass/my-passes'),
   updateReturnTime: (gatePassId, returnTime) => 
-    api.patch(`/gatepass/${gatePassId}/return`, { actualReturnTime: returnTime }),
+    api.put(`/gatepass/return/${gatePassId}`, { actualReturnTime: returnTime }),
   
   // HOD endpoints
   getPendingGatePasses: () => api.get('/gatepass/pending'),
-  getDepartmentGatePasses: () => api.get('/gatepass/department'),
-  approveGatePass: (gatePassId) => api.patch(`/gatepass/${gatePassId}/approve`),
+  getDepartmentGatePasses: () => api.get('/gatepass/all'),
+  approveGatePass: (gatePassId) => api.put(`/gatepass/approve/${gatePassId}`),
   rejectGatePass: (gatePassId, reason) => 
-    api.patch(`/gatepass/${gatePassId}/reject`, { rejectionReason: reason }),
+    api.put(`/gatepass/reject/${gatePassId}`, { rejectionReason: reason }),
   
   // Common endpoints
   getGatePassById: (gatePassId) => api.get(`/gatepass/${gatePassId}`),
   getGatePassStats: () => api.get('/gatepass/stats'),
+};
+
+// Complaint API endpoints
+export const complaintAPI = {
+  // Student endpoints
+  createComplaint: (complaintData) => api.post('/complaints/create', complaintData),
+  getMyComplaints: () => api.get('/complaints/my-complaints'),
+  
+  // HOD endpoints
+  getAllComplaints: () => api.get('/complaints/all'),
+  getPendingComplaints: () => api.get('/complaints/pending'),
+  updateComplaintStatus: (complaintId, statusData) => 
+    api.put(`/complaints/update-status/${complaintId}`, statusData),
+  
+  // Common endpoints
+  getComplaintById: (complaintId) => api.get(`/complaints/${complaintId}`),
+  getComplaintStats: () => api.get('/complaints/stats/overview'),
 };
 
 export default api;

@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import StudentDashboardScreen from '../screens/student/StudentDashboardScreen';
 import MyGatePassesScreen from '../screens/student/MyGatePassesScreen';
+import MyComplaintsScreen from '../screens/student/MyComplaintsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -19,6 +20,8 @@ export default function StudentTabNavigator() {
             iconName = 'dashboard';
           } else if (route.name === 'MyPasses') {
             iconName = 'assignment';
+          } else if (route.name === 'MyComplaints') {
+            iconName = 'report-problem';
           } else if (route.name === 'Profile') {
             iconName = 'person';
           }
@@ -41,6 +44,11 @@ export default function StudentTabNavigator() {
         name="MyPasses" 
         component={MyGatePassesScreen}
         options={{ title: 'My Gate Passes' }}
+      />
+      <Tab.Screen 
+        name="MyComplaints" 
+        component={MyComplaintsScreen}
+        options={{ title: 'My Complaints' }}
       />
       <Tab.Screen 
         name="Profile" 

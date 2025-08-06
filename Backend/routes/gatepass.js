@@ -2,6 +2,7 @@ const express = require('express');
 const GatePass = require('../models/GatePass');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const cleanupService = require('../services/cleanupService');
 
 const router = express.Router();
 
@@ -72,11 +73,17 @@ router.get('/my-passes', auth, async (req, res) => {
       return res.status(403).json({ message: 'Only students can view their gate passes' });
     }
 
+    // Clean up old pending gate passes before fetching
+    await GatePass.cleanupOldPendingPasses();
+
     const gatePasses = await GatePass.find({ student: req.user.userId })
       .populate('approvedBy', 'name')
       .sort({ createdAt: -1 });
 
-    res.json(gatePasses);
+    res.json({
+      success: true,
+      gatePasses: gatePasses
+    });
 
   } catch (error) {
     console.error('Get student gate passes error:', error);
@@ -95,6 +102,9 @@ router.get('/pending', auth, async (req, res) => {
     if (!hod) {
       return res.status(404).json({ message: 'HOD not found' });
     }
+
+    // Clean up old pending gate passes before fetching
+    await GatePass.cleanupOldPendingPasses();
 
     const pendingPasses = await GatePass.find({
       department: hod.department,
@@ -265,6 +275,28 @@ router.put('/return/:id', auth, async (req, res) => {
   } catch (error) {
     console.error('Mark return error:', error);
     res.status(500).json({ message: 'Server error while marking return' });
+  }
+});
+
+// Manual cleanup endpoint (for admin/testing purposes)
+router.post('/cleanup', auth, async (req, res) => {
+  try {
+    // Only allow HODs to trigger manual cleanup
+    if (req.user.userType !== 'hod') {
+      return res.status(403).json({ message: 'Only HODs can trigger cleanup' });
+    }
+
+    const deletedCount = await GatePass.cleanupOldPendingPasses();
+    
+    res.json({
+      success: true,
+      message: `Cleanup completed successfully`,
+      deletedCount: deletedCount
+    });
+
+  } catch (error) {
+    console.error('Manual cleanup error:', error);
+    res.status(500).json({ message: 'Server error during cleanup' });
   }
 });
 

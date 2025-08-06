@@ -87,4 +87,22 @@ gatePassSchema.pre('save', function(next) {
   next();
 });
 
+// Static method to clean up old pending gate passes
+gatePassSchema.statics.cleanupOldPendingPasses = async function() {
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    const result = await this.deleteMany({
+      status: 'pending',
+      createdAt: { $lt: twentyFourHoursAgo }
+    });
+    
+    console.log(`Cleaned up ${result.deletedCount} old pending gate passes`);
+    return result.deletedCount;
+  } catch (error) {
+    console.error('Error cleaning up old pending gate passes:', error);
+    return 0;
+  }
+};
+
 module.exports = mongoose.model('GatePass', gatePassSchema);

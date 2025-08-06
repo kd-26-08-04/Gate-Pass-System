@@ -32,6 +32,7 @@ export default function StudentDashboardScreen({ navigation }) {
   const fetchDashboardData = async () => {
     try {
       const response = await gatePassAPI.getMyGatePasses();
+      
       if (response.data.success) {
         const gatePasses = response.data.gatePasses;
         
@@ -47,6 +48,7 @@ export default function StudentDashboardScreen({ navigation }) {
         setRecentGatePasses(gatePasses.slice(0, 5)); // Show only recent 5
       }
     } catch (error) {
+      console.error('Dashboard fetch error:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -177,7 +179,7 @@ export default function StudentDashboardScreen({ navigation }) {
                   </View>
                   <Text style={styles.gatePassReason}>{gatePass.reason}</Text>
                   <Text style={styles.gatePassDate}>
-                    {formatDate(gatePass.exitTime)} at {formatTime(gatePass.exitTime)}
+                    Exit: {formatDate(gatePass.exitTime)} at {formatTime(gatePass.exitTime)}
                   </Text>
                 </TouchableOpacity>
               ))

@@ -56,9 +56,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      const response = await authAPI.login(email, password);
+      console.log('Attempting login for:', email);
       
-      if (response.data.success) {
+      const response = await authAPI.login(email, password);
+      console.log('Login response:', response.data);
+      
+      // Check if response has token and user (successful login)
+      if (response.data.token && response.data.user) {
         const { token, user } = response.data;
         
         // Store in AsyncStorage
@@ -68,13 +72,26 @@ export const AuthProvider = ({ children }) => {
         dispatch({ type: 'SET_TOKEN', payload: token });
         dispatch({ type: 'SET_USER', payload: user });
         
+        console.log('Login successful for user:', user.name);
         return { success: true };
       } else {
+        console.log('Login failed - no token or user in response');
         dispatch({ type: 'SET_ERROR', payload: response.data.message });
         return { success: false, message: response.data.message };
       }
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed';
+      console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
+      
+      let message = 'Login failed';
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.message) {
+        message = error.message;
+      } else if (error.code === 'NETWORK_ERROR') {
+        message = 'Network error - please check your connection';
+      }
+      
       dispatch({ type: 'SET_ERROR', payload: message });
       return { success: false, message };
     }
@@ -85,7 +102,8 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: 'SET_LOADING', payload: true });
       const response = await authAPI.register(userData);
       
-      if (response.data.success) {
+      // Check if response has token and user (successful registration)
+      if (response.data.token && response.data.user) {
         const { token, user } = response.data;
         
         // Store in AsyncStorage

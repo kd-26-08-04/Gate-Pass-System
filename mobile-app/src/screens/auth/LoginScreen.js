@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,38 @@ import { TextInput, Button, Card, Title, Paragraph } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../../context/AuthContext';
+import { authAPI } from '../../services/api';
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('kuldeept.cse22@sbjit.edu.in'); // Pre-fill for testing
+  const [password, setPassword] = useState('password123'); // Pre-fill for testing
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('checking');
 
   const { login } = useAuth();
+
+  // Test backend connection on component mount
+  useEffect(() => {
+    testConnection();
+  }, []);
+
+  const testConnection = async () => {
+    try {
+      console.log('Testing backend connection...');
+      const response = await authAPI.testConnection();
+      console.log('Connection test successful:', response.data);
+      setConnectionStatus('connected');
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      setConnectionStatus('failed');
+      Toast.show({
+        type: 'error',
+        text1: 'Connection Error',
+        text2: 'Cannot connect to backend server',
+      });
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -31,22 +55,36 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
+    console.log('Login attempt with email:', email);
     setLoading(true);
-    const result = await login(email, password);
     
-    if (result.success) {
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Login successful!',
-      });
-    } else {
+    try {
+      const result = await login(email, password);
+      console.log('Login result:', result);
+      
+      if (result.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Login successful!',
+        });
+      } else {
+        console.log('Login failed with message:', result.message);
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: result.message || 'Please check your credentials',
+        });
+      }
+    } catch (error) {
+      console.error('Login screen error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Login Failed',
-        text2: result.message || 'Please check your credentials',
+        text1: 'Login Error',
+        text2: 'An unexpected error occurred',
       });
     }
+    
     setLoading(false);
   };
 
@@ -71,6 +109,23 @@ export default function LoginScreen({ navigation }) {
               <Paragraph style={styles.subtitle}>
                 Sign in to your account
               </Paragraph>
+              
+              {/* Connection Status Indicator */}
+              <View style={styles.connectionStatus}>
+                <Text style={[
+                  styles.connectionText,
+                  { color: connectionStatus === 'connected' ? '#4CAF50' : 
+                           connectionStatus === 'failed' ? '#F44336' : '#FF9800' }
+                ]}>
+                  Backend: {connectionStatus === 'connected' ? '✓ Connected' : 
+                           connectionStatus === 'failed' ? '✗ Disconnected' : '⟳ Checking...'}
+                </Text>
+                {connectionStatus === 'failed' && (
+                  <TouchableOpacity onPress={testConnection} style={styles.retryButton}>
+                    <Text style={styles.retryText}>Retry Connection</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
               <TextInput
                 label="Email"
@@ -104,9 +159,9 @@ export default function LoginScreen({ navigation }) {
                 onPress={handleLogin}
                 style={styles.button}
                 loading={loading}
-                disabled={loading}
+                disabled={loading || connectionStatus !== 'connected'}
               >
-                Sign In
+                {connectionStatus !== 'connected' ? 'Backend Disconnected' : 'Sign In'}
               </Button>
 
               <View style={styles.registerContainer}>
@@ -185,6 +240,27 @@ const styles = StyleSheet.create({
   },
   registerLink: {
     color: '#6200EE',
+    fontWeight: 'bold',
+  },
+  connectionStatus: {
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingVertical: 5,
+  },
+  connectionText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  retryButton: {
+    marginTop: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    backgroundColor: '#6200EE',
+    borderRadius: 5,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 10,
     fontWeight: 'bold',
   },
 });

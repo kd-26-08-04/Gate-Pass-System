@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const cleanupService = require('./services/cleanupService');
 
 // Load environment variables
 dotenv.config();
@@ -22,12 +23,17 @@ mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connected successfully'))
+.then(() => {
+  console.log('MongoDB connected successfully');
+  // Start cleanup service after database connection
+  cleanupService.start();
+})
 .catch(err => console.log('MongoDB connection error:', err));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/gatepass', require('./routes/gatepass'));
+app.use('/api/complaints', require('./routes/complaints'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -46,6 +52,7 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       gatepass: '/api/gatepass',
+      complaints: '/api/complaints',
       health: '/api/health'
     }
   });

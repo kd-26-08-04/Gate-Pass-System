@@ -9,35 +9,35 @@ import {
 } from 'react-native';
 import { Card, Chip, Searchbar, FAB } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
-import { gatePassAPI } from '../../services/api';
+import { complaintAPI } from '../../services/api';
 import Toast from 'react-native-toast-message';
 
-export default function MyGatePassesScreen({ navigation }) {
-  const [gatePasses, setGatePasses] = useState([]);
-  const [filteredGatePasses, setFilteredGatePasses] = useState([]);
+export default function MyComplaintsScreen({ navigation }) {
+  const [complaints, setComplaints] = useState([]);
+  const [filteredComplaints, setFilteredComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetchGatePasses();
+    fetchComplaints();
   }, []);
 
   useEffect(() => {
-    filterGatePasses();
-  }, [searchQuery, gatePasses]);
+    filterComplaints();
+  }, [searchQuery, complaints]);
 
-  const fetchGatePasses = async () => {
+  const fetchComplaints = async () => {
     try {
-      const response = await gatePassAPI.getMyGatePasses();
+      const response = await complaintAPI.getMyComplaints();
       if (response.data.success) {
-        setGatePasses(response.data.gatePasses);
+        setComplaints(response.data.complaints);
       }
     } catch (error) {
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to fetch gate passes',
+        text2: 'Failed to fetch complaints',
       });
     } finally {
       setLoading(false);
@@ -45,53 +45,67 @@ export default function MyGatePassesScreen({ navigation }) {
     }
   };
 
-  const filterGatePasses = () => {
+  const filterComplaints = () => {
     if (!searchQuery) {
-      setFilteredGatePasses(gatePasses);
+      setFilteredComplaints(complaints);
       return;
     }
 
-    const filtered = gatePasses.filter(
-      (gp) =>
-        gp.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        gp.reason.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        gp.status.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = complaints.filter(
+      (complaint) =>
+        complaint.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        complaint.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        complaint.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        complaint.status.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    setFilteredGatePasses(filtered);
+    setFilteredComplaints(filtered);
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchGatePasses();
+    fetchComplaints();
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
         return '#FFA500';
-      case 'approved':
+      case 'in_progress':
+        return '#2196F3';
+      case 'resolved':
         return '#4CAF50';
-      case 'rejected':
-        return '#F44336';
-      case 'expired':
+      case 'closed':
         return '#757575';
       default:
         return '#757575';
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'pending':
-        return 'pending';
-      case 'approved':
-        return 'check-circle';
-      case 'rejected':
-        return 'cancel';
-      case 'expired':
-        return 'schedule';
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high':
+        return '#F44336';
+      case 'medium':
+        return '#FF9800';
+      case 'low':
+        return '#4CAF50';
       default:
-        return 'help';
+        return '#757575';
+    }
+  };
+
+  const getCategoryIcon = (category) => {
+    switch (category) {
+      case 'gate_pass':
+        return 'exit-to-app';
+      case 'system_issue':
+        return 'bug-report';
+      case 'security':
+        return 'security';
+      case 'other':
+        return 'help-outline';
+      default:
+        return 'help-outline';
     }
   };
 
@@ -112,75 +126,46 @@ export default function MyGatePassesScreen({ navigation }) {
     });
   };
 
-  const getTimeRemaining = (createdAt) => {
-    const created = new Date(createdAt);
-    const now = new Date();
-    const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    const elapsed = now.getTime() - created.getTime();
-    const remaining = twentyFourHours - elapsed;
-    
-    if (remaining <= 0) {
-      return { text: 'Expired', color: '#F44336', urgent: true };
-    }
-    
-    const hours = Math.floor(remaining / (60 * 60 * 1000));
-    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-    
-    if (hours < 2) {
-      return { text: `${hours}h ${minutes}m left`, color: '#F44336', urgent: true };
-    } else if (hours < 6) {
-      return { text: `${hours}h ${minutes}m left`, color: '#FF9800', urgent: false };
-    } else {
-      return { text: `${hours}h ${minutes}m left`, color: '#4CAF50', urgent: false };
-    }
-  };
-
-  const renderGatePassItem = ({ item }) => (
+  const renderComplaintItem = ({ item }) => (
     <TouchableOpacity
-      onPress={() => navigation.navigate('GatePassDetail', { gatePassId: item._id })}
+      onPress={() => navigation.navigate('ComplaintDetail', { complaintId: item._id })}
     >
-      <Card style={styles.gatePassCard}>
+      <Card style={styles.complaintCard}>
         <Card.Content>
-          <View style={styles.gatePassHeader}>
-            <View style={styles.gatePassInfo}>
-              <Text style={styles.destination}>{item.destination}</Text>
-              <Text style={styles.reason}>{item.reason}</Text>
+          <View style={styles.complaintHeader}>
+            <View style={styles.complaintInfo}>
+              <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+              <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
             </View>
             <View style={styles.statusContainer}>
               <Chip
-                icon={getStatusIcon(item.status)}
                 style={[styles.statusChip, { backgroundColor: getStatusColor(item.status) }]}
                 textStyle={styles.statusText}
               >
-                {item.status.toUpperCase()}
+                {item.status.replace('_', ' ').toUpperCase()}
               </Chip>
             </View>
           </View>
           
-          <View style={styles.gatePassDetails}>
+          <View style={styles.complaintDetails}>
             <View style={styles.detailRow}>
-              <MaterialIcons name="exit-to-app" size={16} color="#666" />
+              <MaterialIcons name={getCategoryIcon(item.category)} size={16} color="#666" />
               <Text style={styles.detailText}>
-                Exit: {formatDate(item.exitTime)} at {formatTime(item.exitTime)}
+                {item.category.replace('_', ' ').toUpperCase()}
               </Text>
             </View>
             <View style={styles.detailRow}>
-              <MaterialIcons name="keyboard-return" size={16} color="#666" />
-              <Text style={styles.detailText}>
-                Return: {formatDate(item.expectedReturnTime)} at {formatTime(item.expectedReturnTime)}
+              <MaterialIcons name="flag" size={16} color={getPriorityColor(item.priority)} />
+              <Text style={[styles.detailText, { color: getPriorityColor(item.priority) }]}>
+                {item.priority.toUpperCase()} PRIORITY
               </Text>
             </View>
-            {item.status === 'pending' && (
-              <View style={styles.detailRow}>
-                <MaterialIcons name="timer" size={16} color={getTimeRemaining(item.createdAt).color} />
-                <Text style={[styles.detailText, { 
-                  color: getTimeRemaining(item.createdAt).color,
-                  fontWeight: getTimeRemaining(item.createdAt).urgent ? 'bold' : 'normal'
-                }]}>
-                  Auto-delete: {getTimeRemaining(item.createdAt).text}
-                </Text>
-              </View>
-            )}
+            <View style={styles.detailRow}>
+              <MaterialIcons name="schedule" size={16} color="#666" />
+              <Text style={styles.detailText}>
+                {formatDate(item.createdAt)} at {formatTime(item.createdAt)}
+              </Text>
+            </View>
           </View>
         </Card.Content>
       </Card>
@@ -189,10 +174,10 @@ export default function MyGatePassesScreen({ navigation }) {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <MaterialIcons name="assignment" size={64} color="#ccc" />
-      <Text style={styles.emptyStateText}>No gate passes found</Text>
+      <MaterialIcons name="report-problem" size={64} color="#ccc" />
+      <Text style={styles.emptyStateText}>No complaints found</Text>
       <Text style={styles.emptyStateSubtext}>
-        Create your first gate pass to get started
+        Submit your first complaint to get started
       </Text>
     </View>
   );
@@ -200,15 +185,15 @@ export default function MyGatePassesScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Searchbar
-        placeholder="Search gate passes..."
+        placeholder="Search complaints..."
         onChangeText={setSearchQuery}
         value={searchQuery}
         style={styles.searchBar}
       />
 
       <FlatList
-        data={filteredGatePasses}
-        renderItem={renderGatePassItem}
+        data={filteredComplaints}
+        renderItem={renderComplaintItem}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
         refreshControl={
@@ -220,7 +205,7 @@ export default function MyGatePassesScreen({ navigation }) {
       <FAB
         style={styles.fab}
         icon="plus"
-        onPress={() => navigation.navigate('CreateGatePass')}
+        onPress={() => navigation.navigate('CreateComplaint')}
       />
     </View>
   );
@@ -239,27 +224,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  gatePassCard: {
+  complaintCard: {
     marginBottom: 15,
     elevation: 3,
   },
-  gatePassHeader: {
+  complaintHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 10,
   },
-  gatePassInfo: {
+  complaintInfo: {
     flex: 1,
     marginRight: 10,
   },
-  destination: {
+  title: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 5,
   },
-  reason: {
+  description: {
     fontSize: 14,
     color: '#666',
     marginBottom: 5,
@@ -275,7 +260,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
-  gatePassDetails: {
+  complaintDetails: {
     borderTopWidth: 1,
     borderTopColor: '#eee',
     paddingTop: 10,

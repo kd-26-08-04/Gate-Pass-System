@@ -6,6 +6,8 @@ import StudentTabNavigator from './StudentTabNavigator';
 import HODTabNavigator from './HODTabNavigator';
 import GatePassDetailScreen from '../screens/GatePassDetailScreen';
 import CreateGatePassScreen from '../screens/student/CreateGatePassScreen';
+import CreateComplaintScreen from '../screens/student/CreateComplaintScreen';
+import ComplaintDetailScreen from '../screens/ComplaintDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +32,15 @@ export default function AppNavigator() {
               headerTintColor: '#fff',
             }}
           />
+          <Stack.Screen 
+            name="CreateComplaint" 
+            component={CreateComplaintScreen}
+            options={{ 
+              title: 'Submit Complaint',
+              headerStyle: { backgroundColor: '#6200EE' },
+              headerTintColor: '#fff',
+            }}
+          />
         </>
       ) : (
         <Stack.Screen 
@@ -43,6 +54,15 @@ export default function AppNavigator() {
         component={GatePassDetailScreen}
         options={{ 
           title: 'Gate Pass Details',
+          headerStyle: { backgroundColor: '#6200EE' },
+          headerTintColor: '#fff',
+        }}
+      />
+      <Stack.Screen 
+        name="ComplaintDetail" 
+        component={ComplaintDetailScreen}
+        options={{ 
+          title: 'Complaint Details',
           headerStyle: { backgroundColor: '#6200EE' },
           headerTintColor: '#fff',
         }}

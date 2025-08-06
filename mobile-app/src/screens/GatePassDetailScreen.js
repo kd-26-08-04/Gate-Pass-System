@@ -216,12 +216,12 @@ export default function GatePassDetailScreen({ route, navigation }) {
           />
           <DetailRow
             icon="exit-to-app"
-            label="Exit Time"
+            label="Planned Exit Time"
             value={formatDateTime(gatePass.exitTime)}
           />
           <DetailRow
             icon="keyboard-return"
-            label="Expected Return"
+            label="Expected Return Time"
             value={formatDateTime(gatePass.expectedReturnTime)}
           />
           {gatePass.actualReturnTime && (
