@@ -112,7 +112,10 @@ router.get('/pending', auth, async (req, res) => {
     }).populate('student', 'name email phone')
       .sort({ createdAt: -1 });
 
-    res.json(pendingPasses);
+    res.json({
+      success: true,
+      gatePasses: pendingPasses
+    });
 
   } catch (error) {
     console.error('Get pending gate passes error:', error);
@@ -149,6 +152,7 @@ router.get('/all', auth, async (req, res) => {
     const total = await GatePass.countDocuments(query);
 
     res.json({
+      success: true,
       gatePasses,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
@@ -190,6 +194,7 @@ router.put('/approve/:id', auth, async (req, res) => {
     await gatePass.save();
 
     res.json({
+      success: true,
       message: 'Gate pass approved successfully',
       gatePass
     });
@@ -235,6 +240,7 @@ router.put('/reject/:id', auth, async (req, res) => {
     await gatePass.save();
 
     res.json({
+      success: true,
       message: 'Gate pass rejected successfully',
       gatePass
     });
@@ -275,6 +281,79 @@ router.put('/return/:id', auth, async (req, res) => {
   } catch (error) {
     console.error('Mark return error:', error);
     res.status(500).json({ message: 'Server error while marking return' });
+  }
+});
+
+// Get gate pass by ID
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const gatePass = await GatePass.findById(req.params.id)
+      .populate('student', 'name email phone')
+      .populate('approvedBy', 'name');
+
+    if (!gatePass) {
+      return res.status(404).json({ message: 'Gate pass not found' });
+    }
+
+    // Check if user has permission to view this gate pass
+    if (req.user.userType === 'student' && gatePass.student._id.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    if (req.user.userType === 'hod') {
+      const hod = await User.findById(req.user.userId);
+      if (gatePass.department !== hod.department) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+    }
+
+    res.json({
+      success: true,
+      gatePass
+    });
+
+  } catch (error) {
+    console.error('Get gate pass by ID error:', error);
+    res.status(500).json({ message: 'Server error while fetching gate pass' });
+  }
+});
+
+// Mark scanner as used
+router.put('/scanner-used/:id', auth, async (req, res) => {
+  try {
+    const gatePass = await GatePass.findById(req.params.id);
+
+    if (!gatePass) {
+      return res.status(404).json({ message: 'Gate pass not found' });
+    }
+
+    // Check if user has permission to use scanner for this gate pass
+    if (req.user.userType === 'student' && gatePass.student.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    if (gatePass.status !== 'approved') {
+      return res.status(400).json({ message: 'Gate pass is not approved' });
+    }
+
+    if (gatePass.scannerUsed) {
+      return res.status(400).json({ message: 'Scanner has already been used for this gate pass' });
+    }
+
+    gatePass.scannerUsed = true;
+    gatePass.scannerUsedAt = new Date();
+
+    await gatePass.save();
+
+    res.json({
+      success: true,
+      message: 'Scanner marked as used successfully',
+      gatePass
+    });
+
+  } catch (error) {
+    console.error('Mark scanner used error:', error);
+    res.status(500).json({ message: 'Server error while marking scanner as used' });
   }
 });
 

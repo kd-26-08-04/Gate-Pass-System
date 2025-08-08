@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { TextInput, Button, Card, Title, RadioButton } from 'react-native-paper';
+import { TextInput, Button, Card, Title, RadioButton, Checkbox } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import { useAuth } from '../../context/AuthContext';
 import { complaintAPI } from '../../services/api';
@@ -23,6 +23,7 @@ export default function CreateComplaintScreen({ navigation, route }) {
     category: 'other',
     priority: 'medium',
     relatedGatePass: relatedGatePassId || null,
+    openToAll: false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -220,6 +221,23 @@ export default function CreateComplaintScreen({ navigation, route }) {
               </View>
             )}
 
+            <View style={styles.votingContainer}>
+              <Text style={styles.votingLabel}>Voting Options</Text>
+              <View style={styles.checkboxContainer}>
+                <Checkbox
+                  status={formData.openToAll ? 'checked' : 'unchecked'}
+                  onPress={() => handleInputChange('openToAll', !formData.openToAll)}
+                />
+                <Text style={styles.checkboxLabel}>Open to all students for voting</Text>
+              </View>
+              <Text style={styles.votingDescription}>
+                {formData.openToAll 
+                  ? 'This complaint will be visible to all students for voting and feedback.'
+                  : 'This complaint will only be visible to your department HOD and students in your department.'
+                }
+              </Text>
+            </View>
+
             <Button
               mode="contained"
               onPress={handleSubmit}
@@ -317,6 +335,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1976d2',
     fontWeight: '500',
+  },
+  votingContainer: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  votingLabel: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 10,
+    fontWeight: '500',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 8,
+    flex: 1,
+  },
+  votingDescription: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    lineHeight: 16,
   },
   submitButton: {
     marginTop: 10,

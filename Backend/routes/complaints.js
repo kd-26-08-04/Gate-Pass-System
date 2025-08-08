@@ -11,7 +11,7 @@ router.post('/create', auth, async (req, res) => {
       return res.status(403).json({ message: 'Only students can create complaints' });
     }
 
-    const { title, description, category, priority, relatedGatePass } = req.body;
+    const { title, description, category, priority, relatedGatePass, openToAll } = req.body;
 
     // Validate required fields
     if (!title || !description || !category) {
@@ -35,7 +35,11 @@ router.post('/create', auth, async (req, res) => {
       description: description.trim(),
       category,
       priority: priority || 'medium',
-      relatedGatePass: relatedGatePass || null
+      relatedGatePass: relatedGatePass || null,
+      openToAll: openToAll || false,
+      requiresVoting: openToAll || false,
+      votingEnabled: openToAll || false,
+      votingDeadline: openToAll ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null // 7 days from now if open to all
     });
 
     await complaint.save();

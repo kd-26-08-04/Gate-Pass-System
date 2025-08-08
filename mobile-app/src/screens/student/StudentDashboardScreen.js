@@ -12,6 +12,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { gatePassAPI } from '../../services/api';
 import Toast from 'react-native-toast-message';
+import MessageIcon from '../../components/MessageIcon';
+import NotificationIcon from '../../components/NotificationIcon';
 
 export default function StudentDashboardScreen({ navigation }) {
   const { user } = useAuth();
@@ -113,9 +115,17 @@ export default function StudentDashboardScreen({ navigation }) {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.nameText}>{user.name}</Text>
-          <Text style={styles.deptText}>{user.department}</Text>
+          <View style={styles.headerContent}>
+            <View style={styles.welcomeSection}>
+              <Text style={styles.welcomeText}>Welcome back,</Text>
+              <Text style={styles.nameText}>{user.name}</Text>
+              <Text style={styles.deptText}>{user.department}</Text>
+            </View>
+            <View style={styles.headerIcons}>
+              <MessageIcon style={styles.headerIcon} />
+              <NotificationIcon style={styles.headerIcon} />
+            </View>
+          </View>
         </View>
 
         <View style={styles.statsContainer}>
@@ -222,6 +232,23 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  welcomeSection: {
+    flex: 1,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginLeft: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
   welcomeText: {
     color: '#fff',

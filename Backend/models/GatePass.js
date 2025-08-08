@@ -69,6 +69,14 @@ const gatePassSchema = new mongoose.Schema({
   isReturned: {
     type: Boolean,
     default: false
+  },
+  scannerUsed: {
+    type: Boolean,
+    default: false
+  },
+  scannerUsedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

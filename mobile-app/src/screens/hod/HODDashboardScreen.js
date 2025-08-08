@@ -10,8 +10,10 @@ import {
 import { Card, Title, Paragraph, Chip } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { gatePassAPI } from '../../services/api';
+import { gatePassAPI, complaintAPI } from '../../services/api';
 import Toast from 'react-native-toast-message';
+import MessageIcon from '../../components/MessageIcon';
+import NotificationIcon from '../../components/NotificationIcon';
 
 export default function HODDashboardScreen({ navigation }) {
   const { user } = useAuth();
@@ -21,6 +23,9 @@ export default function HODDashboardScreen({ navigation }) {
     approved: 0,
     rejected: 0,
     expired: 0,
+  });
+  const [complaintStats, setComplaintStats] = useState({
+    total: 0,
   });
   const [recentGatePasses, setRecentGatePasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,15 +37,16 @@ export default function HODDashboardScreen({ navigation }) {
 
   const fetchDashboardData = async () => {
     try {
-      const [pendingResponse, departmentResponse] = await Promise.all([
+      const [pendingResponse, departmentResponse, complaintsResponse] = await Promise.all([
         gatePassAPI.getPendingGatePasses(),
         gatePassAPI.getDepartmentGatePasses(),
+        complaintAPI.getAllComplaints(),
       ]);
 
       if (pendingResponse.data.success && departmentResponse.data.success) {
         const allGatePasses = departmentResponse.data.gatePasses;
         
-        // Calculate stats
+        // Calculate gate pass stats
         const stats = {
           total: allGatePasses.length,
           pending: allGatePasses.filter(gp => gp.status === 'pending').length,
@@ -51,6 +57,15 @@ export default function HODDashboardScreen({ navigation }) {
         
         setStats(stats);
         setRecentGatePasses(allGatePasses.slice(0, 5));
+      }
+
+      // Calculate complaint stats
+      if (complaintsResponse.data.success) {
+        const allComplaints = complaintsResponse.data.complaints;
+        const complaintStats = {
+          total: allComplaints.length,
+        };
+        setComplaintStats(complaintStats);
       }
     } catch (error) {
       Toast.show({
@@ -117,12 +132,21 @@ export default function HODDashboardScreen({ navigation }) {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Welcome,</Text>
-          <Text style={styles.nameText}>{user.name}</Text>
-          <Text style={styles.deptText}>HOD - {user.department}</Text>
+          <View style={styles.headerContent}>
+            <View style={styles.welcomeSection}>
+              <Text style={styles.welcomeText}>Welcome,</Text>
+              <Text style={styles.nameText}>{user.name}</Text>
+              <Text style={styles.deptText}>HOD - {user.department}</Text>
+            </View>
+            <View style={styles.headerIcons}>
+              <MessageIcon style={styles.headerIcon} />
+              <NotificationIcon style={styles.headerIcon} />
+            </View>
+          </View>
         </View>
 
         <View style={styles.statsContainer}>
+          <Text style={styles.sectionTitle}>Gate Pass Statistics</Text>
           <View style={styles.statsGrid}>
             <Card style={[styles.statCard, { backgroundColor: '#E3F2FD' }]}>
               <Card.Content style={styles.statContent}>
@@ -156,6 +180,20 @@ export default function HODDashboardScreen({ navigation }) {
               </Card.Content>
             </Card>
           </View>
+
+          <Text style={styles.sectionTitle}>Complaint Statistics</Text>
+          <View style={styles.statsGrid}>
+            <TouchableOpacity
+              style={[styles.statCard, { backgroundColor: '#F3E5F5' }]}
+              onPress={() => navigation.navigate('HODComplaints')}
+            >
+              <Card.Content style={styles.statContent}>
+                <MaterialIcons name="report-problem" size={24} color="#9C27B0" />
+                <Text style={styles.statNumber}>{complaintStats.total}</Text>
+                <Text style={styles.statLabel}>Total Complaints</Text>
+              </Card.Content>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.quickActions}>
@@ -175,6 +213,26 @@ export default function HODDashboardScreen({ navigation }) {
             <MaterialIcons name="domain" size={32} color="#fff" />
             <Text style={styles.actionButtonText}>Department Passes</Text>
             <Text style={styles.actionButtonSubtext}>View all</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: '#9C27B0' }]}
+            onPress={() => navigation.navigate('HODComplaints')}
+          >
+            <MaterialIcons name="report-problem" size={32} color="#fff" />
+            <Text style={styles.actionButtonText}>View Complaints</Text>
+            <Text style={styles.actionButtonSubtext}>{complaintStats.total} total</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('HODComplaints')}
+          >
+            <MaterialIcons name="assignment" size={32} color="#fff" />
+            <Text style={styles.actionButtonText}>Manage Complaints</Text>
+            <Text style={styles.actionButtonSubtext}>Review & respond</Text>
           </TouchableOpacity>
         </View>
 
@@ -234,6 +292,23 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  welcomeSection: {
+    flex: 1,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginLeft: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+  },
   welcomeText: {
     color: '#fff',
     fontSize: 16,
@@ -251,6 +326,13 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+    marginTop: 10,
   },
   statsGrid: {
     flexDirection: 'row',

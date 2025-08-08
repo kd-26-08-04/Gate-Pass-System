@@ -6,12 +6,14 @@ import {
   ScrollView,
   RefreshControl,
   Alert,
+  Modal,
 } from 'react-native';
 import { Card, Title, Paragraph, Button, Chip, Divider } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { gatePassAPI } from '../services/api';
 import Toast from 'react-native-toast-message';
+import QRCodeDisplay from '../components/QRCodeDisplay';
 
 export default function GatePassDetailScreen({ route, navigation }) {
   const { gatePassId } = route.params;
@@ -20,6 +22,7 @@ export default function GatePassDetailScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     fetchGatePassDetail();
@@ -82,6 +85,41 @@ export default function GatePassDetailScreen({ route, navigation }) {
         },
       ]
     );
+  };
+
+  const handleOpenScanner = async () => {
+    try {
+      setProcessing(true);
+      
+      // Mark scanner as used in the backend
+      const response = await gatePassAPI.markScannerUsed(gatePassId);
+      
+      if (response.data.success) {
+        setShowScanner(true);
+        
+        // Update local state to reflect scanner usage
+        setGatePass(prev => ({
+          ...prev,
+          scannerUsed: true,
+          scannerUsedAt: new Date().toISOString()
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to open scanner';
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage,
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleCloseScanner = () => {
+    setShowScanner(false);
+    // Refresh gate pass data to get updated information
+    fetchGatePassDetail();
   };
 
   const getStatusColor = (status) => {
@@ -277,20 +315,46 @@ export default function GatePassDetailScreen({ route, navigation }) {
       </Card>
 
       {/* Action Buttons */}
-      {user.userType === 'student' && 
-       gatePass.status === 'approved' && 
-       !gatePass.isReturned && (
+      {user.userType === 'student' && gatePass.status === 'approved' && (
         <View style={styles.actionContainer}>
+          {/* QR Scanner Button */}
           <Button
             mode="contained"
-            onPress={handleReturn}
-            style={styles.returnButton}
+            onPress={handleOpenScanner}
+            style={[
+              styles.scannerButton,
+              gatePass.scannerUsed && styles.disabledButton
+            ]}
             loading={processing}
-            disabled={processing}
-            icon="keyboard-return"
+            disabled={processing || gatePass.scannerUsed}
+            icon="qr-code-scanner"
           >
-            Mark as Returned
+            {gatePass.scannerUsed ? 'Scanner Used' : 'Open Scanner'}
           </Button>
+
+          {/* Scanner Usage Info */}
+          {gatePass.scannerUsed && gatePass.scannerUsedAt && (
+            <View style={styles.scannerInfo}>
+              <MaterialIcons name="info" size={16} color="#666" />
+              <Text style={styles.scannerInfoText}>
+                Scanner used on {formatDateTime(gatePass.scannerUsedAt)}
+              </Text>
+            </View>
+          )}
+
+          {/* Return Button */}
+          {!gatePass.isReturned && (
+            <Button
+              mode="contained"
+              onPress={handleReturn}
+              style={styles.returnButton}
+              loading={processing}
+              disabled={processing}
+              icon="keyboard-return"
+            >
+              Mark as Returned
+            </Button>
+          )}
         </View>
       )}
 
@@ -299,6 +363,19 @@ export default function GatePassDetailScreen({ route, navigation }) {
           Gate Pass ID: {gatePass._id}
         </Text>
       </View>
+
+      {/* QR Scanner Modal */}
+      <Modal
+        visible={showScanner}
+        animationType="slide"
+        presentationStyle="fullScreen"
+      >
+        <QRCodeDisplay
+          visible={showScanner}
+          onClose={handleCloseScanner}
+          gatePassData={gatePass}
+        />
+      </Modal>
     </ScrollView>
   );
 }
@@ -382,6 +459,26 @@ const styles = StyleSheet.create({
   actionContainer: {
     margin: 20,
     marginTop: 10,
+  },
+  scannerButton: {
+    paddingVertical: 8,
+    backgroundColor: '#6200EE',
+    marginBottom: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
+  },
+  scannerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingHorizontal: 10,
+  },
+  scannerInfoText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 5,
+    fontStyle: 'italic',
   },
   returnButton: {
     paddingVertical: 8,

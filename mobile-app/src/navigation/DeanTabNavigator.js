@@ -2,15 +2,14 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import StudentDashboardScreen from '../screens/student/StudentDashboardScreen';
-import MyGatePassesScreen from '../screens/student/MyGatePassesScreen';
-import MyComplaintsScreen from '../screens/student/MyComplaintsScreen';
+import DeanDashboard from '../screens/DeanDashboard';
 import VotingScreen from '../screens/VotingScreen';
+import ComplaintListScreen from '../screens/ComplaintListScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-export default function StudentTabNavigator() {
+export default function DeanTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -19,10 +18,8 @@ export default function StudentTabNavigator() {
 
           if (route.name === 'Dashboard') {
             iconName = 'dashboard';
-          } else if (route.name === 'MyPasses') {
+          } else if (route.name === 'Complaints') {
             iconName = 'assignment';
-          } else if (route.name === 'MyComplaints') {
-            iconName = 'report-problem';
           } else if (route.name === 'Voting') {
             iconName = 'how-to-vote';
           } else if (route.name === 'Profile') {
@@ -33,30 +30,43 @@ export default function StudentTabNavigator() {
         },
         tabBarActiveTintColor: '#6200EE',
         tabBarInactiveTintColor: 'gray',
-        headerStyle: { backgroundColor: '#6200EE' },
+        headerStyle: {
+          backgroundColor: '#6200EE',
+        },
         headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       })}
     >
       <Tab.Screen 
         name="Dashboard" 
-        component={StudentDashboardScreen}
-        options={{ title: 'Dashboard' }}
+        component={DeanDashboard}
+        options={{
+          title: 'Dean Dashboard',
+        }}
       />
       <Tab.Screen 
-        name="MyPasses" 
-        component={MyGatePassesScreen}
-        options={{ title: 'Gate Passes' }}
+        name="Complaints" 
+        component={ComplaintListScreen}
+        options={{
+          title: 'All Complaints',
+        }}
+        initialParams={{ isDean: true }}
       />
       <Tab.Screen 
-        name="MyComplaints" 
-        component={MyComplaintsScreen}
-        options={{ title: 'My Complaints' }}
+        name="Voting" 
+        component={VotingScreen}
+        options={{
+          title: 'Voting Results',
+        }}
       />
       <Tab.Screen 
         name="Profile" 
         component={ProfileScreen}
-        options={{ title: 'Profile' }}
+        options={{
+          title: 'Profile',
+        }}
       />
     </Tab.Navigator>
   );

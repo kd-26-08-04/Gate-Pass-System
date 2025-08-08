@@ -34,6 +34,9 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/gatepass', require('./routes/gatepass'));
 app.use('/api/complaints', require('./routes/complaints'));
+app.use('/api/voting', require('./routes/voting'));
+app.use('/api/messages', require('./routes/messages'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -53,6 +56,9 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       gatepass: '/api/gatepass',
       complaints: '/api/complaints',
+      voting: '/api/voting',
+      messages: '/api/messages',
+      notifications: '/api/notifications',
       health: '/api/health'
     }
   });

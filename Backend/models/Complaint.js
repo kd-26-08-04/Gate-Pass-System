@@ -62,6 +62,93 @@ const complaintSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'GatePass',
     default: null
+  },
+  // Voting system fields
+  requiresVoting: {
+    type: Boolean,
+    default: false
+  },
+  openToAll: {
+    type: Boolean,
+    default: false
+  },
+  votingEnabled: {
+    type: Boolean,
+    default: false
+  },
+  votingDeadline: {
+    type: Date,
+    default: null
+  },
+  votes: [{
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    studentName: {
+      type: String,
+      required: true
+    },
+    studentUSN: {
+      type: String,
+      required: true
+    },
+    department: {
+      type: String,
+      required: true
+    },
+    vote: {
+      type: String,
+      enum: ['accept', 'reject'],
+      required: true
+    },
+    reason: {
+      type: String,
+      maxlength: 500
+    },
+    votedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  votingSummary: {
+    totalVotes: {
+      type: Number,
+      default: 0
+    },
+    acceptVotes: {
+      type: Number,
+      default: 0
+    },
+    rejectVotes: {
+      type: Number,
+      default: 0
+    },
+    acceptPercentage: {
+      type: Number,
+      default: 0
+    },
+    rejectPercentage: {
+      type: Number,
+      default: 0
+    }
+  },
+  sentToDean: {
+    type: Boolean,
+    default: false
+  },
+  sentToDeanAt: {
+    type: Date,
+    default: null
+  },
+  deanResponse: {
+    type: String,
+    default: null
+  },
+  deanResponseDate: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
