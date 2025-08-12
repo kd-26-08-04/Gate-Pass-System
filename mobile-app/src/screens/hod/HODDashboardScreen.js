@@ -140,7 +140,7 @@ export default function HODDashboardScreen({ navigation }) {
             </View>
             <View style={styles.headerIcons}>
               <MessageIcon style={styles.headerIcon} />
-              <NotificationIcon style={styles.headerIcon} />
+              <NotificationIcon style={styles.headerIcon} navigation={navigation} />
             </View>
           </View>
         </View>
@@ -188,7 +188,7 @@ export default function HODDashboardScreen({ navigation }) {
               onPress={() => navigation.navigate('HODComplaints')}
             >
               <Card.Content style={styles.statContent}>
-                <MaterialIcons name="report-problem" size={24} color="#9C27B0" />
+                <MaterialIcons name="report-problem" size={24} color="#9910b4ff" />
                 <Text style={styles.statNumber}>{complaintStats.total}</Text>
                 <Text style={styles.statLabel}>Total Complaints</Text>
               </Card.Content>

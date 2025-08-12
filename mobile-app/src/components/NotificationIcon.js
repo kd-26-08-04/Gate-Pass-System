@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  AppState,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card, Button, Chip } from 'react-native-paper';
@@ -14,29 +15,52 @@ import { useAuth } from '../context/AuthContext';
 import { notificationAPI } from '../services/api';
 import Toast from 'react-native-toast-message';
 
-export default function NotificationIcon({ style }) {
+export default function NotificationIcon({ style, navigation }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchNotifications();
-    // Set up polling for new notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    // Set up polling for new notifications every 10 seconds for better responsiveness
+    const interval = setInterval(fetchNotifications, 10000);
+    
+    // Listen for app state changes to refresh notifications when app comes to foreground
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === 'active') {
+        fetchNotifications();
+      }
+    };
+    
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      clearInterval(interval);
+      subscription?.remove();
+    };
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (showRefreshing = false) => {
     try {
+      if (showRefreshing) setRefreshing(true);
+      
       const response = await notificationAPI.getNotifications();
       if (response.data.success) {
-        setNotifications(response.data.notifications);
-        const unread = response.data.notifications.filter(notif => !notif.isRead).length;
+        const notifications = response.data.notifications || [];
+        setNotifications(notifications);
+        const unread = notifications.filter(notif => !notif.isRead).length;
         setUnreadCount(unread);
+        console.log(`Fetched ${notifications.length} notifications, ${unread} unread`);
+      } else {
+        console.log('Failed to fetch notifications:', response.data.message);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      // Don't show error toast for polling failures to avoid spam
+    } finally {
+      if (showRefreshing) setRefreshing(false);
     }
   };
 
@@ -106,6 +130,60 @@ export default function NotificationIcon({ style }) {
     );
   };
 
+  const handleNotificationPress = async (notification) => {
+    // Mark as read if not already read
+    if (!notification.isRead) {
+      await markAsRead(notification._id);
+    }
+
+    // Close modal
+    setModalVisible(false);
+
+    // Navigate based on notification type and user type
+    if (navigation && notification.actionData) {
+      try {
+        switch (notification.type) {
+          case 'new_gatepass':
+          case 'gatepass_approved':
+          case 'gatepass_rejected':
+          case 'gatepass_expired':
+            if (user.userType === 'student') {
+              navigation.navigate('MyPasses');
+            } else if (user.userType === 'hod') {
+              navigation.navigate('Pending');
+            }
+            break;
+          
+          case 'new_complaint':
+          case 'complaint_response':
+          case 'complaint_status_update':
+            if (user.userType === 'student') {
+              navigation.navigate('MyComplaints');
+            } else if (user.userType === 'hod') {
+              navigation.navigate('HODComplaints');
+            }
+            break;
+          
+          case 'complaint_voting_enabled':
+            if (user.userType === 'student' || user.userType === 'dean') {
+              navigation.navigate('Voting');
+            }
+            break;
+          
+          case 'new_message':
+            // Message is handled within the MessageIcon component
+            break;
+          
+          default:
+            // For other notification types, just mark as read
+            break;
+        }
+      } catch (error) {
+        console.error('Navigation error:', error);
+      }
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -127,16 +205,22 @@ export default function NotificationIcon({ style }) {
 
   const getNotificationIcon = (type) => {
     switch (type) {
+      case 'new_gatepass':
+        return { name: 'assignment', color: '#2196F3' };
       case 'gatepass_approved':
         return { name: 'check-circle', color: '#4CAF50' };
       case 'gatepass_rejected':
         return { name: 'cancel', color: '#F44336' };
       case 'gatepass_expired':
         return { name: 'schedule', color: '#FF9800' };
+      case 'new_complaint':
+        return { name: 'report-problem', color: '#FF5722' };
       case 'complaint_response':
         return { name: 'reply', color: '#2196F3' };
       case 'complaint_status_update':
         return { name: 'update', color: '#9C27B0' };
+      case 'complaint_voting_enabled':
+        return { name: 'how-to-vote', color: '#673AB7' };
       case 'new_message':
         return { name: 'message', color: '#6200EE' };
       case 'system_update':
@@ -148,16 +232,22 @@ export default function NotificationIcon({ style }) {
 
   const getNotificationTitle = (type) => {
     switch (type) {
+      case 'new_gatepass':
+        return 'New Gate Pass';
       case 'gatepass_approved':
         return 'Gate Pass Approved';
       case 'gatepass_rejected':
         return 'Gate Pass Rejected';
       case 'gatepass_expired':
         return 'Gate Pass Expired';
+      case 'new_complaint':
+        return 'New Complaint';
       case 'complaint_response':
         return 'Complaint Response';
       case 'complaint_status_update':
         return 'Complaint Update';
+      case 'complaint_voting_enabled':
+        return 'Voting Enabled';
       case 'new_message':
         return 'New Message';
       case 'system_update':
@@ -194,6 +284,17 @@ export default function NotificationIcon({ style }) {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Notifications</Text>
               <View style={styles.headerButtons}>
+                <TouchableOpacity
+                  style={styles.refreshButton}
+                  onPress={() => fetchNotifications(true)}
+                  disabled={refreshing}
+                >
+                  <MaterialIcons 
+                    name="refresh" 
+                    size={20} 
+                    color={refreshing ? "#ccc" : "#fff"} 
+                  />
+                </TouchableOpacity>
                 {unreadCount > 0 && (
                   <TouchableOpacity
                     style={styles.markAllButton}
@@ -223,7 +324,7 @@ export default function NotificationIcon({ style }) {
                   return (
                     <TouchableOpacity
                       key={notification._id}
-                      onPress={() => !notification.isRead && markAsRead(notification._id)}
+                      onPress={() => handleNotificationPress(notification)}
                       onLongPress={() => deleteNotification(notification._id)}
                     >
                       <Card style={[
@@ -335,6 +436,12 @@ const styles = StyleSheet.create({
   },
   headerButtons: {
     flexDirection: 'row',
+  },
+  refreshButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 15,
+    padding: 5,
+    marginRight: 10,
   },
   markAllButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',

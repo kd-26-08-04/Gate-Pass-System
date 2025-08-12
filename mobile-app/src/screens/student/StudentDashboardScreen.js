@@ -122,8 +122,7 @@ export default function StudentDashboardScreen({ navigation }) {
               <Text style={styles.deptText}>{user.department}</Text>
             </View>
             <View style={styles.headerIcons}>
-              <MessageIcon style={styles.headerIcon} />
-              <NotificationIcon style={styles.headerIcon} />
+              <NotificationIcon style={styles.headerIcon} navigation={navigation} />
             </View>
           </View>
         </View>

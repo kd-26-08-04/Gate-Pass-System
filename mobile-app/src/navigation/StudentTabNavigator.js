@@ -54,6 +54,11 @@ export default function StudentTabNavigator() {
         options={{ title: 'My Complaints' }}
       />
       <Tab.Screen 
+        name="Voting" 
+        component={VotingScreen}
+        options={{ title: 'Voting' }}
+      />
+      <Tab.Screen 
         name="Profile" 
         component={ProfileScreen}
         options={{ title: 'Profile' }}

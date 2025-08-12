@@ -5,32 +5,30 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer');
+const { createNotification } = require('./notifications');
 
-// Get all complaints available for voting (for students)
+// Get all complaints available for voting (for students and dean)
 router.get('/complaints', auth, async (req, res) => {
   try {
-    if (req.user.userType !== 'student') {
+    if (req.user.userType !== 'student' && req.user.userType !== 'dean') {
       return res.status(403).json({
         success: false,
-        message: 'Only students can view voting complaints'
+        message: 'Only students and dean can view voting complaints'
       });
     }
 
-    const complaints = await Complaint.find({
-      $or: [
-        { 
-          votingEnabled: true,
-          votingDeadline: { $gt: new Date() },
-          openToAll: true
-        },
-        {
-          votingEnabled: true,
-          votingDeadline: { $gt: new Date() },
-          department: req.user.department // Department-specific complaints
-        }
-      ],
-      'votes.student': { $ne: req.user.id } // Exclude complaints user already voted on
-    })
+    let query = {
+      votingEnabled: true,
+      votingDeadline: { $gt: new Date() },
+      openToAll: true // Only show complaints that are open to all students
+    };
+
+    // If user is a student, exclude complaints they already voted on
+    if (req.user.userType === 'student') {
+      query['votes.student'] = { $ne: req.user.id };
+    }
+
+    const complaints = await Complaint.find(query)
     .populate('student', 'name usn department')
     .sort({ createdAt: -1 });
 
@@ -50,10 +48,10 @@ router.get('/complaints', auth, async (req, res) => {
 // Submit a vote on a complaint
 router.post('/complaints/:complaintId/vote', auth, async (req, res) => {
   try {
-    if (req.user.userType !== 'student') {
+    if (req.user.userType !== 'student' && req.user.userType !== 'dean') {
       return res.status(403).json({
         success: false,
-        message: 'Only students can vote on complaints'
+        message: 'Only students and dean can vote on complaints'
       });
     }
 
@@ -102,8 +100,8 @@ router.post('/complaints/:complaintId/vote', auth, async (req, res) => {
     complaint.votes.push({
       student: req.user.id,
       studentName: req.user.name,
-      studentUSN: req.user.usn,
-      department: req.user.department,
+      studentUSN: req.user.usn || 'DEAN',
+      department: req.user.department || 'Administration',
       vote,
       reason: reason || '',
       votedAt: new Date()
@@ -171,8 +169,45 @@ router.post('/complaints/:complaintId/enable-voting', auth, async (req, res) => 
     complaint.requiresVoting = true;
     complaint.votingEnabled = true;
     complaint.votingDeadline = new Date(votingDeadline);
+    complaint.openToAll = true; // Make it visible to all students
     
     await complaint.save();
+
+    // Notify all students and dean about voting enabled
+    const students = await User.find({ userType: 'student' });
+    const dean = await User.findOne({ userType: 'dean' });
+    
+    // Create notifications for all students
+    const studentNotifications = students.map(student => ({
+      type: 'complaint_voting_enabled',
+      message: `New complaint open for voting: ${complaint.title}`,
+      recipient: student._id,
+      actionData: {
+        id: complaint._id.toString(),
+        title: complaint.title,
+        status: 'voting'
+      },
+      priority: 'normal'
+    }));
+    
+    if (studentNotifications.length > 0) {
+      await require('../models/Notification').insertMany(studentNotifications);
+    }
+    
+    // Create notification for dean
+    if (dean) {
+      await createNotification(
+        'complaint_voting_enabled',
+        `New complaint open for voting: ${complaint.title}`,
+        dean._id,
+        {
+          id: complaint._id.toString(),
+          title: complaint.title,
+          status: 'voting'
+        },
+        'normal'
+      );
+    }
 
     res.json({
       success: true,

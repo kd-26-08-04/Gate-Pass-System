@@ -3,6 +3,7 @@ const router = express.Router();
 const Complaint = require('../models/Complaint');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { createNotification } = require('./notifications');
 
 // Create a new complaint (Student only)
 router.post('/create', auth, async (req, res) => {
@@ -43,6 +44,67 @@ router.post('/create', auth, async (req, res) => {
     });
 
     await complaint.save();
+
+    // Create notification for HOD about new complaint
+    const hod = await User.findOne({ 
+      department: student.department, 
+      userType: 'hod' 
+    });
+    
+    if (hod) {
+      await createNotification(
+        'new_complaint',
+        `New complaint submitted by ${student.name} (${student.usn}): ${title}`,
+        hod._id,
+        {
+          id: complaint._id.toString(),
+          title: title,
+          status: 'pending'
+        },
+        priority === 'high' ? 'high' : 'normal'
+      );
+    }
+
+    // If complaint is open to all students and voting enabled, notify all students and dean
+    if (openToAll && complaint.votingEnabled) {
+      // Get all students
+      const students = await User.find({ userType: 'student' });
+      
+      // Get dean
+      const dean = await User.findOne({ userType: 'dean' });
+      
+      // Create notifications for all students
+      const studentNotifications = students.map(studentUser => ({
+        type: 'complaint_voting_enabled',
+        message: `New complaint open for voting: ${title}`,
+        recipient: studentUser._id,
+        actionData: {
+          id: complaint._id.toString(),
+          title: title,
+          status: 'voting'
+        },
+        priority: 'normal'
+      }));
+      
+      if (studentNotifications.length > 0) {
+        await require('../models/Notification').insertMany(studentNotifications);
+      }
+      
+      // Create notification for dean
+      if (dean) {
+        await createNotification(
+          'complaint_voting_enabled',
+          `New complaint open for voting: ${title}`,
+          dean._id,
+          {
+            id: complaint._id.toString(),
+            title: title,
+            status: 'voting'
+          },
+          'normal'
+        );
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -198,6 +260,7 @@ router.put('/update-status/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
+    const oldStatus = complaint.status;
     complaint.status = status;
     if (response) {
       complaint.response = response;
@@ -206,6 +269,26 @@ router.put('/update-status/:id', auth, async (req, res) => {
     complaint.assignedTo = req.user.userId;
 
     await complaint.save();
+
+    // Create notification for student about status update
+    if (oldStatus !== status) {
+      const notificationType = response ? 'complaint_response' : 'complaint_status_update';
+      const message = response 
+        ? `Your complaint "${complaint.title}" has received a response from ${hod.name}`
+        : `Your complaint "${complaint.title}" status has been updated to ${status}`;
+      
+      await createNotification(
+        notificationType,
+        message,
+        complaint.student,
+        {
+          id: complaint._id.toString(),
+          title: complaint.title,
+          status: status
+        },
+        'high'
+      );
+    }
 
     res.json({
       success: true,

@@ -5,11 +5,14 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
+      'new_gatepass',
       'gatepass_approved',
       'gatepass_rejected', 
       'gatepass_expired',
+      'new_complaint',
       'complaint_response',
       'complaint_status_update',
+      'complaint_voting_enabled',
       'new_message',
       'system_update'
     ]

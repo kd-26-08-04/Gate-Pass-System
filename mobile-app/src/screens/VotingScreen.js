@@ -180,9 +180,14 @@ export default function VotingScreen({ navigation }) {
         {/* Header */}
         <View style={styles.header}>
           <MaterialIcons name="how-to-vote" size={32} color="#6200EE" />
-          <Text style={styles.headerTitle}>Student Voting</Text>
+          <Text style={styles.headerTitle}>
+            {user.userType === 'dean' ? 'Voting Dashboard' : 'Student Voting'}
+          </Text>
           <Text style={styles.headerSubtitle}>
-            Vote on complaints that require student community input
+            {user.userType === 'dean' 
+              ? 'Review and vote on complaints requiring community input'
+              : 'Vote on complaints that require student community input'
+            }
           </Text>
         </View>
 
@@ -283,7 +288,7 @@ export default function VotingScreen({ navigation }) {
                       style={styles.voteButton}
                       icon="how-to-vote"
                     >
-                      Cast Your Vote
+                      {user.userType === 'dean' ? 'Cast Dean Vote' : 'Cast Your Vote'}
                     </Button>
                   )}
                 </View>

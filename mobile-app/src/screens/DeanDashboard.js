@@ -20,6 +20,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { complaintAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Toast from 'react-native-toast-message';
+import NotificationIcon from '../components/NotificationIcon';
 
 const { width } = Dimensions.get('window');
 
@@ -149,11 +150,20 @@ export default function DeanDashboard({ navigation }) {
       >
         {/* Header */}
         <View style={styles.header}>
-          <MaterialIcons name="account-balance" size={32} color="#fff" />
-          <Text style={styles.headerTitle}>Dean Dashboard</Text>
-          <Text style={styles.headerSubtitle}>
-            College Complaint Management & Oversight
-          </Text>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <MaterialIcons name="account-balance" size={32} color="#fff" />
+              <View style={styles.headerText}>
+                <Text style={styles.headerTitle}>Dean Dashboard</Text>
+                <Text style={styles.headerSubtitle}>
+                  College Complaint Management & Oversight
+                </Text>
+              </View>
+            </View>
+            <View style={styles.headerIcons}>
+              <NotificationIcon style={styles.headerIcon} navigation={navigation} />
+            </View>
+          </View>
         </View>
 
         {/* Stats Cards */}
@@ -397,20 +407,40 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#1976D2',
     padding: 20,
-    alignItems: 'center',
     elevation: 4,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerText: {
+    marginLeft: 12,
+    flex: 1,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    marginTop: 8,
   },
   headerSubtitle: {
     fontSize: 14,
     color: '#BBDEFB',
-    textAlign: 'center',
     marginTop: 4,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginLeft: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
   statsContainer: {
     padding: 16,

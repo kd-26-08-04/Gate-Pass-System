@@ -3,6 +3,7 @@ const GatePass = require('../models/GatePass');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const cleanupService = require('../services/cleanupService');
+const { createNotification } = require('./notifications');
 
 const router = express.Router();
 
@@ -54,6 +55,35 @@ router.post('/create', auth, async (req, res) => {
     });
 
     await gatePass.save();
+
+    // Create notification for HOD about new gate pass
+    try {
+      const hod = await User.findOne({ 
+        department: student.department, 
+        userType: 'hod' 
+      });
+      
+      if (hod) {
+        await createNotification(
+          'new_gatepass',
+          `New gate pass submitted by ${student.name} (${student.usn}) for ${destination}`,
+          hod._id,
+          {
+            id: gatePass._id.toString(),
+            title: `Gate Pass - ${destination}`,
+            destination: destination,
+            status: 'pending'
+          },
+          'normal'
+        );
+        console.log(`Notification created for HOD ${hod.name} about gate pass from ${student.name}`);
+      } else {
+        console.log(`No HOD found for department: ${student.department}`);
+      }
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Don't fail the gate pass creation if notification fails
+    }
 
     res.status(201).json({
       message: 'Gate pass created successfully',
@@ -193,6 +223,20 @@ router.put('/approve/:id', auth, async (req, res) => {
 
     await gatePass.save();
 
+    // Create notification for student about approval
+    await createNotification(
+      'gatepass_approved',
+      `Your gate pass for ${gatePass.destination} has been approved by ${hod.name}`,
+      gatePass.student,
+      {
+        id: gatePass._id.toString(),
+        title: `Gate Pass - ${gatePass.destination}`,
+        destination: gatePass.destination,
+        status: 'approved'
+      },
+      'high'
+    );
+
     res.json({
       success: true,
       message: 'Gate pass approved successfully',
@@ -238,6 +282,20 @@ router.put('/reject/:id', auth, async (req, res) => {
     gatePass.approvalDate = new Date();
 
     await gatePass.save();
+
+    // Create notification for student about rejection
+    await createNotification(
+      'gatepass_rejected',
+      `Your gate pass for ${gatePass.destination} has been rejected by ${hod.name}. Reason: ${rejectionReason}`,
+      gatePass.student,
+      {
+        id: gatePass._id.toString(),
+        title: `Gate Pass - ${gatePass.destination}`,
+        destination: gatePass.destination,
+        status: 'rejected'
+      },
+      'high'
+    );
 
     res.json({
       success: true,
