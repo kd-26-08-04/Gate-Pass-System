@@ -131,6 +131,7 @@ export const complaintAPI = {
   
   // HOD endpoints
   getAllComplaints: () => api.get('/complaints/all'),
+  getDeanComplaints: () => api.get('/complaints/dean'),
   getPendingComplaints: () => api.get('/complaints/pending'),
   updateComplaintStatus: (complaintId, statusData) => 
     api.put(`/complaints/update-status/${complaintId}`, statusData),

@@ -45,12 +45,14 @@ export default function ComplaintListScreen({ navigation, route }) {
       
       if (user.userType === 'student') {
         response = await complaintAPI.getMyComplaints();
+      } else if (user.userType === 'dean' || isDean) {
+        response = await complaintAPI.getDeanComplaints();
       } else {
         response = await complaintAPI.getAllComplaints();
       }
       
       if (response.data.success) {
-        setComplaints(response.data.data);
+        setComplaints(response.data.data || response.data.complaints || []);
       }
     } catch (error) {
       console.error('Error fetching complaints:', error);

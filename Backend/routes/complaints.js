@@ -141,6 +141,30 @@ router.get('/my-complaints', auth, async (req, res) => {
   }
 });
 
+// Get dean-relevant complaints (Dean only)
+router.get('/dean', auth, async (req, res) => {
+  try {
+    if (req.user.userType !== 'dean') {
+      return res.status(403).json({ success: false, message: 'Only Dean can view this' });
+    }
+
+    const complaints = await Complaint.find({
+      $or: [
+        { sentToDean: true },
+        { requiresVoting: true },
+        { priority: 'high' }
+      ]
+    })
+      .populate('student', 'name usn department')
+      .sort({ createdAt: -1 });
+
+    return res.json({ success: true, data: complaints });
+  } catch (error) {
+    console.error('Get dean complaints error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while fetching dean complaints' });
+  }
+});
+
 // Get all complaints for HOD
 router.get('/all', auth, async (req, res) => {
   try {

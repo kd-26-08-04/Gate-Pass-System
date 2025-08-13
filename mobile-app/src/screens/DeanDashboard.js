@@ -44,18 +44,10 @@ export default function DeanDashboard({ navigation }) {
     try {
       setLoading(true);
       
-      // Fetch complaints sent to dean
-      const complaintsResponse = await complaintAPI.getAllComplaints();
+      // Fetch dean-relevant complaints directly from backend endpoint
+      const complaintsResponse = await complaintAPI.getDeanComplaints();
       if (complaintsResponse.data.success) {
-        const allComplaints = complaintsResponse.data.data;
-        
-        // Filter complaints that have been sent to dean or require dean attention
-        const deanComplaints = allComplaints.filter(complaint => 
-          complaint.sentToDean || 
-          complaint.requiresVoting || 
-          complaint.priority === 'high'
-        );
-        
+        const deanComplaints = complaintsResponse.data.data || [];
         setComplaints(deanComplaints);
         
         // Calculate stats
@@ -232,7 +224,7 @@ export default function DeanDashboard({ navigation }) {
               <Button 
                 mode="outlined" 
                 compact
-                onPress={() => navigation.navigate('AllComplaints', { isDean: true })}
+                onPress={() => navigation.navigate('Complaints', { isDean: true })}
               >
                 View All
               </Button>
@@ -354,7 +346,7 @@ export default function DeanDashboard({ navigation }) {
               <Button
                 mode="contained"
                 icon="assignment"
-                onPress={() => navigation.navigate('AllComplaints', { isDean: true })}
+                onPress={() => navigation.navigate('Complaints', { isDean: true })}
                 style={[styles.actionButton, { backgroundColor: '#1976D2' }]}
               >
                 Review All Complaints
@@ -363,7 +355,7 @@ export default function DeanDashboard({ navigation }) {
               <Button
                 mode="contained"
                 icon="how-to-vote"
-                onPress={() => navigation.navigate('VotingResults')}
+                onPress={() => navigation.navigate('Voting')}
                 style={[styles.actionButton, { backgroundColor: '#7B1FA2' }]}
               >
                 View Voting Results

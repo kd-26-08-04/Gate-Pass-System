@@ -23,6 +23,7 @@ const departments = [
   'Computer Science',
   'Information Technology',
   'Electronics',
+  'Electronics and Telecommunication',
   'Mechanical',
   'Civil',
   'Electrical',
@@ -165,7 +166,93 @@ export default function RegisterScreen({ navigation }) {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Helper: derive department from email tokens
+    const deriveDeptFromEmail = (e) => {
+      if (!e) return null;
+      // Only use local-part before '@' to avoid matching 'it' in domains like 'sbjit'
+      const lower = e.toLowerCase().split('@')[0];
+      // Stronger/less ambiguous tokens first to avoid accidental matches
+      const mapping = {
+        CS: ['cse', 'cs', 'comp', 'computer'],
+        EE: ['ee', 'electrical'],
+        ET: ['et', 'entc', 'etc'], // Electronics & Telecommunication
+        EC: ['ec', 'ece', 'electro'],
+        ME: ['mech', 'me'],
+        CV: ['civil', 'cv'],
+        IT: ['it', 'info', 'infotech'], // Keep IT last so 'sbjit' doesn't override EE/ET
+      };
+
+      // Try to extract tokens like '.ee22', '.et22', '.cse22' from the local-part for higher precision
+      const tokenMatch = lower.match(/(?:^|[._-])([a-z]{2,3})\d{2}/i);
+      if (tokenMatch) {
+        const token = tokenMatch[1].toLowerCase();
+        const tokenToCode = { cse: 'CS', cs: 'CS', ee: 'EE', et: 'ET', it: 'IT', me: 'ME', ec: 'EC', ece: 'EC', cv: 'CV' };
+        if (tokenToCode[token]) return tokenToCode[token];
+      }
+
+      for (const code of Object.keys(mapping)) {
+        if (mapping[code].some(k => lower.includes(k))) return code;
+      }
+      return null;
+    };
+
+    const deptNameFromCode = (code) => {
+      const names = {
+        CS: 'Computer Science',
+        IT: 'Information Technology',
+        EC: 'Electronics',
+        ET: 'Electronics and Telecommunication',
+        ME: 'Mechanical',
+        CV: 'Civil',
+        EE: 'Electrical',
+      };
+      return names[code] || null;
+    };
+
+    setFormData(prev => {
+      let next = { ...prev };
+
+      if (field === 'email') {
+        next.email = value;
+        // When student: auto-select department from email and enforce USN dept code
+        if (next.userType === 'student') {
+          const code = deriveDeptFromEmail(value);
+          if (code) {
+            const name = deptNameFromCode(code);
+            if (name) next.department = name;
+            // If USN present, enforce dept code as first two letters (e.g., EE22187)
+            if (next.usn) {
+              const usnUp = (next.usn || '').toUpperCase().replace(/\s+/g, '');
+              const remainder = usnUp.replace(/^[A-Z]{2}/, ''); // strip existing dept code if any
+              next.usn = `${code}${remainder}`;
+            }
+          }
+        }
+        return next;
+      }
+
+      if (field === 'usn') {
+        // Uppercase and enforce dept code inferred from email if student
+        let usnUp = (value || '').toUpperCase().replace(/\s+/g, '');
+        if (next.userType === 'student') {
+          const emailCode = deriveDeptFromEmail(next.email);
+          if (emailCode) {
+            // Replace any existing leading department letters with the inferred code
+            const remainder = usnUp.replace(/^[A-Z]{2}/, '');
+            usnUp = `${emailCode}${remainder}`;
+            // Also sync department name
+            const name = deptNameFromCode(emailCode);
+            if (name) next.department = name;
+          }
+        }
+        next.usn = usnUp;
+        return next;
+      }
+
+      // Default
+      next[field] = value;
+      return next;
+    });
   };
 
   const validateForm = () => {
@@ -415,17 +502,17 @@ export default function RegisterScreen({ navigation }) {
                     onChangeText={(value) => handleInputChange('usn', value.toUpperCase())}
                     mode="outlined"
                     style={styles.input}
-                    placeholder="e.g., 1XX21CS001"
+                    placeholder="e.g., EE22187"
                     left={<TextInput.Icon icon="badge-account" />}
                   />
                 )}
 
                 <View style={styles.pickerContainer}>
-                  <Text style={styles.pickerLabel}>Department:</Text>
+                  <Text style={styles.pickerLabel}>Department (auto-detected from email):</Text>
                   <Picker
                     selectedValue={formData.department}
-                    style={styles.picker}
-                    onValueChange={(value) => handleInputChange('department', value)}
+                    enabled={false}
+                    style={[styles.picker, { opacity: 0.7 }]}
                   >
                     {departments.map((dept) => (
                       <Picker.Item key={dept} label={dept} value={dept} />

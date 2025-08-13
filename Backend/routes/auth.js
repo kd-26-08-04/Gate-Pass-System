@@ -16,12 +16,86 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // For students, check if USN already exists
-    if (userType === 'student' && usn) {
-      const existingUSN = await User.findOne({ usn });
+    // Helpers to derive department from USN/email
+    const deptMapping = {
+      CS: 'Computer Science',
+      IT: 'Information Technology',
+      EC: 'Electronics',
+      ET: 'Electronics and Telecommunication',
+      ME: 'Mechanical',
+      CV: 'Civil',
+      EE: 'Electrical',
+    };
+
+    const deriveDeptFromUSN = (u) => {
+      if (!u || typeof u !== 'string' || u.length < 2) return null;
+      // New USN format: starts with 2-letter department code, e.g., EE22187
+      const code = u.substring(0, 2).toUpperCase();
+      return deptMapping[code] ? { code, name: deptMapping[code] } : null;
+    };
+
+    const deriveDeptFromEmail = (e) => {
+      if (!e || typeof e !== 'string') return null;
+      // Only consider the local part before '@' to avoid 'it' in 'sbjit'
+      const lower = e.toLowerCase().split('@')[0];
+      // Try accurate token like .ee22, .et22, .cse22
+      const tokenMatch = lower.match(/(?:^|[._-])([a-z]{2,3})\d{2}/i);
+      if (tokenMatch) {
+        const token = tokenMatch[1].toLowerCase();
+        const tokenToCode = { cse: 'CS', cs: 'CS', ee: 'EE', et: 'ET', it: 'IT', me: 'ME', ec: 'EC', ece: 'EC', cv: 'CV' };
+        const code = tokenToCode[token];
+        if (code && deptMapping[code]) return { code, name: deptMapping[code] };
+      }
+      // Fallback keywords, with IT last
+      const tokens = [
+        { code: 'CS', keys: ['cse', 'cs', 'comp', 'computer'] },
+        { code: 'EE', keys: ['ee', 'electrical'] },
+        { code: 'ET', keys: ['et', 'entc', 'etc'] },
+        { code: 'EC', keys: ['ec', 'ece', 'electro'] },
+        { code: 'ME', keys: ['mech', 'me'] },
+        { code: 'CV', keys: ['civil', 'cv'] },
+        { code: 'IT', keys: ['it', 'info', 'infotech'] },
+      ];
+      for (const t of tokens) {
+        if (t.keys.some(k => lower.includes(k))) {
+          return { code: t.code, name: deptMapping[t.code] };
+        }
+      }
+      return null;
+    };
+
+    // Student-specific constraints
+    let finalDepartment = department;
+    let usnUpper = usn?.toUpperCase();
+
+    if (userType === 'student') {
+      // Require USN
+      if (!usnUpper) {
+        return res.status(400).json({ message: 'USN is required for student registration' });
+      }
+
+      // Unique USN
+      const existingUSN = await User.findOne({ usn: usnUpper });
       if (existingUSN) {
         return res.status(400).json({ message: 'Student with this USN already exists' });
       }
+
+      const usnDept = deriveDeptFromUSN(usnUpper);
+      if (!usnDept) {
+        return res.status(400).json({ message: 'Invalid USN format. Expected two-letter department at the start (e.g., EE22187, CS22187).' });
+      }
+
+      const emailDept = deriveDeptFromEmail(email);
+      if (!emailDept) {
+        return res.status(400).json({ message: 'Email must contain department indicator (e.g., cs, it, ec, me, cv, ee, ch, bt)' });
+      }
+
+      if (emailDept.code !== usnDept.code) {
+        return res.status(400).json({ message: `Department mismatch: Email indicates ${emailDept.name}, USN indicates ${usnDept.name}` });
+      }
+
+      // Enforce department from the derived values; ignore provided department
+      finalDepartment = usnDept.name; // derived from leading USN code
     }
 
     // For HOD, check if department already has an HOD
@@ -38,8 +112,8 @@ router.post('/register', async (req, res) => {
       email,
       password,
       userType,
-      department,
-      usn: userType === 'student' ? usn : undefined,
+      department: finalDepartment,
+      usn: userType === 'student' ? usnUpper : undefined,
       phone
     });
 
@@ -136,6 +210,7 @@ router.get('/departments', (req, res) => {
     'Computer Science',
     'Information Technology',
     'Electronics',
+    'Electronics and Telecommunication',
     'Mechanical',
     'Civil',
     'Electrical',

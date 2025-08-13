@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema({
       'Computer Science',
       'Information Technology',
       'Electronics',
+      'Electronics and Telecommunication',
       'Mechanical',
       'Civil',
       'Electrical',
@@ -82,19 +83,17 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 // Extract department from USN for students
 userSchema.pre('save', function(next) {
   if (this.userType === 'student' && this.usn) {
-    // USN format: 1XX21CS001 (where XX is college code, CS is department)
-    const deptCode = this.usn.substring(5, 7);
+    // New USN format: starts with 2-letter department code, e.g., EE22187
+    const deptCode = this.usn.substring(0, 2).toUpperCase();
     const deptMapping = {
       'CS': 'Computer Science',
-      'IT': 'Information Technology',
       'EC': 'Electronics',
+      'ET': 'Electronics and Telecommunication',
       'ME': 'Mechanical',
       'CV': 'Civil',
       'EE': 'Electrical',
-      'CH': 'Chemical',
-      'BT': 'Biotechnology'
     };
-    
+
     if (deptMapping[deptCode]) {
       this.department = deptMapping[deptCode];
     }
