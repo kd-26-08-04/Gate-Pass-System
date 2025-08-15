@@ -17,22 +17,37 @@ router.get('/complaints', auth, async (req, res) => {
       });
     }
 
-    const baseQuery = {
+    const now = new Date();
+
+    // Base query: voting must be enabled and not expired
+    let query = {
       votingEnabled: true,
-      votingDeadline: { $gt: new Date() },
-      openToAll: true
+      votingDeadline: { $gt: now }
     };
 
-    let query = { ...baseQuery };
-
     if (req.user.userType === 'student') {
-      // Limit to this student's department and exclude already voted complaints
+      // Students see:
+      // - College-scope complaints (any department)
+      // - Department-scope complaints only from their department
       const student = await User.findById(req.user.userId).select('department');
       if (!student) {
         return res.status(404).json({ success: false, message: 'Student not found' });
       }
-      query.department = student.department;
-      query['votes.student'] = { $ne: req.user.userId };
+
+      query.$and = [
+        {
+          $or: [
+            { votingScope: 'college' },
+            { votingScope: 'department', department: student.department }
+          ]
+        },
+        { 'votes.student': { $ne: req.user.userId } } // exclude already voted
+      ];
+    }
+
+    // For dean, only show college-scope open votes
+    if (req.user.userType === 'dean') {
+      query.votingScope = 'college';
     }
 
     const complaints = await Complaint.find(query)
@@ -114,9 +129,13 @@ router.post('/complaints/:complaintId/vote', auth, async (req, res) => {
       });
     }
 
-    // Department restriction: only students from same department can vote (Dean can vote on any)
-    if (req.user.userType === 'student' && complaint.department !== (await User.findById(req.user.userId).select('department')).department) {
-      return res.status(403).json({ success: false, message: 'You can only vote on complaints from your department' });
+    // Scope restriction for students
+    if (req.user.userType === 'student') {
+      const { department } = await User.findById(req.user.userId).select('department');
+      if (complaint.votingScope === 'department' && complaint.department !== department) {
+        return res.status(403).json({ success: false, message: 'You can only vote on department-scope complaints from your department' });
+      }
+      // If scope is 'college', any student may vote; no extra check needed
     }
 
     // Add the vote
@@ -174,7 +193,7 @@ router.post('/complaints/:complaintId/enable-voting', auth, async (req, res) => 
     }
 
     const { complaintId } = req.params;
-    const { votingDeadline } = req.body;
+    const { votingDeadline, votingScope } = req.body; // votingScope: 'department' | 'college'
 
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) {
@@ -198,15 +217,21 @@ router.post('/complaints/:complaintId/enable-voting', auth, async (req, res) => 
     complaint.requiresVoting = true;
     complaint.votingEnabled = true;
     complaint.votingDeadline = deadline;
-    complaint.openToAll = true; // Visible to all students in the department
+    complaint.votingScope = (votingScope === 'college' || votingScope === 'department') ? votingScope : 'department';
+    complaint.openToAll = (complaint.votingScope === 'college'); // legacy compatibility
     
     await complaint.save();
 
-    // Notify all students in the same department and dean about voting enabled
-    const students = await User.find({ userType: 'student', department: complaint.department });
+    // Notify students according to scope and dean always
+    let students = [];
+    if (complaint.votingScope === 'college') {
+      students = await User.find({ userType: 'student' });
+    } else {
+      students = await User.find({ userType: 'student', department: complaint.department });
+    }
     const dean = await User.findOne({ userType: 'dean' });
     
-    // Create notifications for department students
+    // Create notifications for students
     const studentNotifications = students.map(student => ({
       type: 'complaint_voting_enabled',
       message: `New complaint open for voting: ${complaint.title}`,
@@ -378,7 +403,7 @@ async function generateVotingReportPDF(complaint) {
 // Send email to Dean (configure your email settings)
 async function sendVotingReportToDean(deanEmail, complaint, pdfBuffer) {
   // Configure your email transporter
-  const transporter = nodemailer.createTransporter({
+  const transporter = nodemailer.createTransport({
     // Add your email configuration here
     service: 'gmail', // or your email service
     auth: {
@@ -420,5 +445,110 @@ async function sendVotingReportToDean(deanEmail, complaint, pdfBuffer) {
 
   await transporter.sendMail(mailOptions);
 }
+
+// Send email to HOD (configure your email settings)
+async function sendVotingReportToHod(hodEmail, complaint, pdfBuffer) {
+  // Configure your email transporter
+  const transporter = nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: hodEmail,
+    subject: `Department Voting Results - ${complaint.title}`,
+    html: `
+      <h2>Department Voting Results</h2>
+      <p><strong>Complaint Title:</strong> ${complaint.title}</p>
+      <p><strong>Category:</strong> ${complaint.category}</p>
+      <p><strong>Submitted by:</strong> ${complaint.studentName} (${complaint.studentUSN})</p>
+      <p><strong>Department:</strong> ${complaint.department}</p>
+      
+      <h3>Voting Summary:</h3>
+      <ul>
+        <li>Total Votes: ${complaint.votingSummary.totalVotes}</li>
+        <li>Accept Votes: ${complaint.votingSummary.acceptVotes} (${complaint.votingSummary.acceptPercentage}%)</li>
+        <li>Reject Votes: ${complaint.votingSummary.rejectVotes} (${complaint.votingSummary.rejectPercentage}%)</li>
+      </ul>
+      
+      <p>Please find the detailed voting report attached as PDF.</p>
+      
+      <p>Best regards,<br>Gate Pass System</p>
+    `,
+    attachments: [
+      {
+        filename: `voting-report-${complaint._id}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }
+    ]
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
+// Finalize and route voting results based on scope
+router.post('/complaints/:complaintId/finalize-results', auth, async (req, res) => {
+  try {
+    const { complaintId } = req.params;
+    const complaint = await Complaint.findById(complaintId)
+      .populate('student', 'name usn department')
+      .populate('votes.student', 'name usn department');
+
+    if (!complaint) {
+      return res.status(404).json({ success: false, message: 'Complaint not found' });
+    }
+
+    // Ensure voting has ended or is enabled
+    if (!complaint.votingEnabled) {
+      return res.status(400).json({ success: false, message: 'Voting is not enabled for this complaint' });
+    }
+
+    const pdfBuffer = await generateVotingReportPDF(complaint);
+
+    if (complaint.votingScope === 'college') {
+      // Dean finalization
+      if (req.user.userType !== 'dean') {
+        return res.status(403).json({ success: false, message: 'Only Dean can finalize college-scope results' });
+      }
+      if (complaint.sentToDean) {
+        return res.status(400).json({ success: false, message: 'Results already sent to Dean' });
+      }
+      const dean = await User.findOne({ userType: 'dean' });
+      if (!dean) {
+        return res.status(404).json({ success: false, message: 'Dean not found in system' });
+      }
+      await sendVotingReportToDean(dean.email, complaint, pdfBuffer);
+      complaint.sentToDean = true;
+      complaint.sentToDeanAt = new Date();
+      await complaint.save();
+      return res.json({ success: true, message: 'Voting results sent to Dean successfully' });
+    } else {
+      // Department finalization
+      if (req.user.userType !== 'hod') {
+        return res.status(403).json({ success: false, message: 'Only HOD can finalize department-scope results' });
+      }
+      const hod = await User.findById(req.user.userId);
+      if (!hod || hod.userType !== 'hod' || hod.department !== complaint.department) {
+        return res.status(403).json({ success: false, message: 'HOD can only finalize for their department' });
+      }
+      if (complaint.sentToHod) {
+        return res.status(400).json({ success: false, message: 'Results already sent to HOD' });
+      }
+      await sendVotingReportToHod(hod.email, complaint, pdfBuffer);
+      complaint.sentToHod = true;
+      complaint.sentToHodAt = new Date();
+      await complaint.save();
+      return res.json({ success: true, message: 'Voting results sent to HOD successfully' });
+    }
+  } catch (error) {
+    console.error('Error finalizing results:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 module.exports = router;

@@ -6,6 +6,7 @@ import HODDashboardScreen from '../screens/hod/HODDashboardScreen';
 import PendingApprovalsScreen from '../screens/hod/PendingApprovalsScreen';
 import DepartmentGatePassesScreen from '../screens/hod/DepartmentGatePassesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import HODHistoryScreen from '../screens/hod/HODHistoryScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -22,6 +23,8 @@ export default function HODTabNavigator() {
             iconName = 'pending-actions';
           } else if (route.name === 'Department') {
             iconName = 'domain';
+          } else if (route.name === 'History') {
+            iconName = 'history';
           } else if (route.name === 'Profile') {
             iconName = 'person';
           }
@@ -49,6 +52,11 @@ export default function HODTabNavigator() {
         name="Department" 
         component={DepartmentGatePassesScreen}
         options={{ title: 'Department Passes' }}
+      />
+      <Tab.Screen 
+        name="History" 
+        component={HODHistoryScreen}
+        options={{ title: 'History' }}
       />
       <Tab.Screen 
         name="Profile" 

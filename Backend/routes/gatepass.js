@@ -195,6 +195,58 @@ router.get('/all', auth, async (req, res) => {
   }
 });
 
+// Get concise gate pass history for HOD with filters
+router.get('/history', auth, async (req, res) => {
+  try {
+    if (req.user.userType !== 'hod') {
+      return res.status(403).json({ message: 'Only HODs can view gate pass history' });
+    }
+
+    const hod = await User.findById(req.user.userId);
+    if (!hod) {
+      return res.status(404).json({ message: 'HOD not found' });
+    }
+
+    const { status = 'all', q = '', page = 1, limit = 20 } = req.query;
+
+    const query = { department: hod.department };
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    if (q) {
+      const regex = new RegExp(q, 'i');
+      query.$or = [
+        { studentName: regex },
+        { studentUSN: regex },
+      ];
+    }
+
+    const numericLimit = Math.min(parseInt(limit) || 20, 100);
+    const numericPage = Math.max(parseInt(page) || 1, 1);
+
+    const gatePasses = await GatePass.find(query)
+      .select('studentName studentUSN status createdAt approvalDate')
+      .sort({ createdAt: -1 })
+      .limit(numericLimit)
+      .skip((numericPage - 1) * numericLimit);
+
+    const total = await GatePass.countDocuments(query);
+
+    res.json({
+      success: true,
+      gatePasses,
+      totalPages: Math.ceil(total / numericLimit),
+      currentPage: numericPage,
+      total
+    });
+
+  } catch (error) {
+    console.error('Get HOD gate pass history error:', error);
+    res.status(500).json({ message: 'Server error while fetching gate pass history' });
+  }
+});
+
 // Approve gate pass (HOD only)
 router.put('/approve/:id', auth, async (req, res) => {
   try {

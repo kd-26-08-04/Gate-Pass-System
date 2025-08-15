@@ -116,15 +116,20 @@ export default function ComplaintListScreen({ navigation, route }) {
       const votingDeadline = new Date();
       votingDeadline.setDate(votingDeadline.getDate() + 7); // 7 days from now
 
+      // Ask user which scope to use
+      // For simplicity, default to department here; you can replace with UI prompt or modal as needed
+      const votingScope = user.userType === 'dean' ? 'college' : 'department';
+
       const response = await votingAPI.enableVoting(complaintId, {
-        votingDeadline: votingDeadline.toISOString()
+        votingDeadline: votingDeadline.toISOString(),
+        votingScope
       });
 
       if (response.data.success) {
         Toast.show({
           type: 'success',
           text1: 'Success',
-          text2: 'Voting enabled for complaint',
+          text2: `Voting enabled (${votingScope})`,
         });
         fetchComplaints(); // Refresh the list
       }

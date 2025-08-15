@@ -24,6 +24,7 @@ export default function CreateComplaintScreen({ navigation, route }) {
     priority: 'medium',
     relatedGatePass: relatedGatePassId || null,
     openToAll: false,
+    votingScope: 'department',
   });
   const [loading, setLoading] = useState(false);
 
@@ -222,18 +223,29 @@ export default function CreateComplaintScreen({ navigation, route }) {
             )}
 
             <View style={styles.votingContainer}>
-              <Text style={styles.votingLabel}>Voting Options</Text>
-              <View style={styles.checkboxContainer}>
-                <Checkbox
-                  status={formData.openToAll ? 'checked' : 'unchecked'}
-                  onPress={() => handleInputChange('openToAll', !formData.openToAll)}
-                />
-                <Text style={styles.checkboxLabel}>Open to all students for voting</Text>
-              </View>
+              <Text style={styles.votingLabel}>Voting Visibility</Text>
+              <RadioButton.Group
+                onValueChange={(value) => {
+                  handleInputChange('votingScope', value);
+                  handleInputChange('openToAll', value === 'college');
+                }}
+                value={formData.votingScope}
+              >
+                <View style={styles.priorityOptions}>
+                  <View style={styles.priorityOption}>
+                    <RadioButton value="department" />
+                    <Text style={styles.priorityText}>Department only</Text>
+                  </View>
+                  <View style={styles.priorityOption}>
+                    <RadioButton value="college" />
+                    <Text style={styles.priorityText}>Open to all (college)</Text>
+                  </View>
+                </View>
+              </RadioButton.Group>
               <Text style={styles.votingDescription}>
-                {formData.openToAll 
-                  ? 'This complaint will be visible to all students for voting and feedback.'
-                  : 'This complaint will only be visible to your department HOD and students in your department.'
+                {formData.votingScope === 'college'
+                  ? 'Visible to all students in the college; results go to Dean.'
+                  : 'Visible only to your department students; results go to HOD.'
                 }
               </Text>
             </View>

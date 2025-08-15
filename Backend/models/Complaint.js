@@ -72,6 +72,12 @@ const complaintSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // Voting visibility scope: 'department' limits to same department; 'college' opens to all students
+  votingScope: {
+    type: String,
+    enum: ['department', 'college'],
+    default: 'department'
+  },
   votingEnabled: {
     type: Boolean,
     default: false
@@ -147,6 +153,15 @@ const complaintSchema = new mongoose.Schema({
     default: null
   },
   deanResponseDate: {
+    type: Date,
+    default: null
+  },
+  // Department scope finalization tracking
+  sentToHod: {
+    type: Boolean,
+    default: false
+  },
+  sentToHodAt: {
     type: Date,
     default: null
   }

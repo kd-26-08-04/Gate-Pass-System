@@ -10,9 +10,11 @@ import {
 import { Card, Title, Paragraph, Button, Divider } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const navigation = useNavigation();
 
   const handleLogout = () => {
     Alert.alert(
@@ -115,6 +117,14 @@ export default function ProfileScreen() {
       <Card style={styles.card}>
         <Card.Content>
           <Title>Settings</Title>
+          {user.userType === 'hod' && (
+            <ProfileItem
+              icon="history"
+              label="History"
+              value="View gate pass history"
+              onPress={() => navigation.navigate('History')}
+            />
+          )}
           <ProfileItem
             icon="notifications"
             label="Notifications"

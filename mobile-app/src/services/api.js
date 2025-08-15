@@ -113,6 +113,7 @@ export const gatePassAPI = {
   // HOD endpoints
   getPendingGatePasses: () => api.get('/gatepass/pending'),
   getDepartmentGatePasses: () => api.get('/gatepass/all'),
+  getHodHistory: (params) => api.get('/gatepass/history', { params }),
   approveGatePass: (gatePassId) => api.put(`/gatepass/approve/${gatePassId}`),
   rejectGatePass: (gatePassId, reason) => 
     api.put(`/gatepass/reject/${gatePassId}`, { rejectionReason: reason }),
