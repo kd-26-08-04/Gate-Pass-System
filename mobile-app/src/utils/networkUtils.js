@@ -8,7 +8,7 @@ import Constants from 'expo-constants';
 export const getDevelopmentServerUrl = () => {
   if (!__DEV__) {
     // Production URL - replace with your actual production API URL
-    return 'https://your-production-api.com/api';
+    return 'https://gate-pass-system-1.onrender.com/api';
   }
 
   // For web development

@@ -53,7 +53,7 @@ try {
   console.log('🚀 API Base URL set to:', API_BASE_URL);
 } catch (error) {
   console.error('❌ Error getting API URL:', error);
-  API_BASE_URL = 'http://gate-pass-system-9vid.onrender.com/api'; // Safe fallback
+  API_BASE_URL = 'https://gate-pass-system-1.onrender.com/api'; // Safe fallback
   console.log('🔄 Using safe fallback URL:', API_BASE_URL);
 }
 
