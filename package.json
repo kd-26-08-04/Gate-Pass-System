@@ -1,42 +1,43 @@
 {
-  "name": "gate-pass-system",
+  "name": "gate-pass-backend",
   "version": "1.0.0",
-  "description": "Gate Pass Management System - Mobile App for Students and HODs",
-  "main": "Backend/server.js",
+  "description": "Backend API for Gate Pass Management System",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "start": "cd Backend && node server.js",
-    "dev": "cd Backend && nodemon server.js",
-    "server": "cd Backend && nodemon server.js",
-    "mobile": "cd mobile-app && npm start",
-    "install-mobile": "cd mobile-app && npm install",
-    "install-backend": "cd Backend && npm install",
-    "setup": "npm run install-backend && npm run install-mobile"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "server": "nodemon server.js"
   },
   "keywords": [
     "gate-pass",
-    "student-management",
-    "react-native",
-    "mobile-app",
-    "expo",
-    "nodejs"
+    "backend",
+    "api",
+    "nodejs",
+    "express",
+    "mongodb"
   ],
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "expo": "^53.0.20",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
-    "validator": "^13.11.0",
-    "react-dom": "19.0.0",
-    "react-native-web": "^0.20.0",
-    "@expo/metro-runtime": "~5.0.4"
+    "morgan": "^1.10.0",
+    "nodemailer": "^7.0.5",
+    "pdfkit": "^0.17.1",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
-    "@react-native-community/cli": "^19.1.0",
     "nodemon": "^3.0.1"
   }
 }
