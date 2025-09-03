@@ -139,7 +139,7 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend server running on port ${PORT}`);
-  console.log(`🌐 API URL: http://localhost:${PORT}`);
+  console.log(`🌐 API URL: https://gate-pass-system-1.onrender.com:${PORT}`);
 });
 
 // Safety: exit on unhandled rejections in production
@@ -149,3 +149,14 @@ process.on('unhandledRejection', (reason) => {
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
 });
+
+// Keep-alive system for Render: ping health endpoint every 14 minutes
+if (process.env.RENDER === 'true' || process.env.KEEP_ALIVE === 'true') {
+  const axios = require('axios');
+  const SELF_URL = process.env.SELF_URL || `https://gate-pass-system-1.onrender.com:${PORT}/api/health`;
+  setInterval(() => {
+    axios.get(SELF_URL)
+      .then(() => console.log('🔄 Keep-alive ping sent'))
+      .catch((err) => console.error('Keep-alive ping failed:', err.message));
+  }, 14 * 60 * 1000); // every 14 minutes
+}
