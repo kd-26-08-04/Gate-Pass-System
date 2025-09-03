@@ -13,7 +13,7 @@ export const getDevelopmentServerUrl = () => {
 
   // For web development
   if (Platform.OS === 'web') {
-    return 'http://localhost:5000/api';
+    return 'http://gate-pass-system-9vid.onrender.com/api';
   }
 
   console.log('🔍 Detecting development server URL...');
@@ -56,7 +56,7 @@ export const getDevelopmentServerUrl = () => {
     console.log('🤖 Using Android emulator fallback:', fallbackUrl);
   } else if (Platform.OS === 'ios') {
     // iOS simulator can access localhost directly
-    fallbackUrl = 'http://localhost:5000/api';
+    fallbackUrl = 'http://gate-pass-system-9vid.onrender.com/api';
     console.log('🍎 Using iOS simulator fallback:', fallbackUrl);
   } else {
     // For physical devices, use the detected WiFi IP

@@ -9,7 +9,12 @@ const auth = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    // Normalize user fields for downstream code
+    req.user = {
+      ...decoded,
+      id: decoded.userId || decoded.id,
+      userId: decoded.userId || decoded.id,
+    };
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);

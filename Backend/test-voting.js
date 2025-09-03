@@ -3,7 +3,7 @@
 const axios = require('axios');
 
 // Test the voting system endpoints
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://gate-pass-system-9vid.onrender.com/api';
 
 // Test data
 const testData = {

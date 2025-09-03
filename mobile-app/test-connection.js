@@ -4,7 +4,7 @@ const axios = require('axios');
 
 // Test different API URLs
 const testUrls = [
-  'http://localhost:5000/api/health',
+  'http://gate-pass-system-9vid.onrender.com/api/health',
   'http://10.0.2.2:5000/api/health',
   'http://192.168.43.211:5000/api/health',
   'http://192.168.56.1:5000/api/health'

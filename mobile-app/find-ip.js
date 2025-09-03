@@ -67,7 +67,7 @@ console.log('\n📱 For Android Emulator:');
 console.log('   Use: http://10.0.2.2:5000/api (maps to host localhost)');
 
 console.log('\n📱 For iOS Simulator:');
-console.log('   Use: http://localhost:5000/api (direct localhost access)');
+console.log('   Use: http://gate-pass-system-9vid.onrender.com/api (direct localhost access)');
 
 console.log('\n🌐 For Physical Devices:');
 console.log(`   Use: http://${likelyIP ? likelyIP.ip : 'YOUR_IP'}:5000/api`);

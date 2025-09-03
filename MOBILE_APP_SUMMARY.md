@@ -133,7 +133,7 @@ Update `mobile-app/src/services/api.js`:
 const API_BASE_URL = 'http://YOUR_COMPUTER_IP:5000/api';
 
 // For emulator testing
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://gate-pass-system-9vid.onrender.com/api';
 ```
 
 ### Environment Variables

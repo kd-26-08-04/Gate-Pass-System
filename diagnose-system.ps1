@@ -66,7 +66,7 @@ foreach ($path in $requiredPaths) {
 # Check network connectivity
 Write-Host "`n📋 Network Connectivity:" -ForegroundColor Cyan
 try {
-    $response = Invoke-WebRequest -Uri "http://localhost:5000" -TimeoutSec 5 -ErrorAction Stop
+    $response = Invoke-WebRequest -Uri "http://gate-pass-system-9vid.onrender.com" -TimeoutSec 5 -ErrorAction Stop
     Write-Host "✅ Backend server is running" -ForegroundColor Green
 } catch {
     Write-Host "❌ Backend server not responding" -ForegroundColor Red

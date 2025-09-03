@@ -43,8 +43,8 @@ npm run dev
 ```
 
 ### 4. Verify Server
-- API: http://localhost:5000
-- Health Check: http://localhost:5000/api/health
+- API: http://gate-pass-system-9vid.onrender.com
+- Health Check: http://gate-pass-system-9vid.onrender.com/api/health
 
 ## 🔧 Configuration
 
@@ -122,12 +122,12 @@ FRONTEND_URL=https://your-frontend-domain.com
 ## 📱 Mobile App Integration
 
 The mobile app should connect to:
-- **Development**: `http://localhost:5000/api`
+- **Development**: `http://gate-pass-system-9vid.onrender.com/api`
 - **Production**: `https://your-backend-domain.com/api`
 
 Update mobile app's `src/services/api.js`:
 ```javascript
-const API_BASE_URL = 'http://localhost:5000/api'; // Development
+const API_BASE_URL = 'http://gate-pass-system-9vid.onrender.com/api'; // Development
 // const API_BASE_URL = 'https://your-backend-domain.com/api'; // Production
 ```
 

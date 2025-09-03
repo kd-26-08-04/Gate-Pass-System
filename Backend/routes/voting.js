@@ -448,8 +448,12 @@ async function sendVotingReportToDean(deanEmail, complaint, pdfBuffer) {
 
 // Send email to HOD (configure your email settings)
 async function sendVotingReportToHod(hodEmail, complaint, pdfBuffer) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('Email credentials not set. Skipping HOD email send.');
+    return;
+  }
   // Configure your email transporter
-  const transporter = nodemailer.createTransporter({
+  const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,

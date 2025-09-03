@@ -74,7 +74,7 @@ Set-Location $mobilePath
 Start-Process powershell -ArgumentList "-Command", "npx expo start --clear" -WindowStyle Normal
 
 Write-Host "✅ Setup completed!" -ForegroundColor Green
-Write-Host "🌐 Backend should be running on: http://localhost:5000" -ForegroundColor Cyan
+Write-Host "🌐 Backend should be running on: http://gate-pass-system-9vid.onrender.com" -ForegroundColor Cyan
 Write-Host "📱 Mobile app should be starting with Expo..." -ForegroundColor Cyan
 Write-Host "📝 Check the new PowerShell windows for logs" -ForegroundColor Yellow
 

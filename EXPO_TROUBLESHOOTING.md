@@ -80,7 +80,7 @@ npm install
 ### **"Network Request Failed" Errors**
 
 #### **Check Backend Status**
-1. Open browser: `http://localhost:5000`
+1. Open browser: `http://gate-pass-system-9vid.onrender.com`
 2. Should see: "Gate Pass Management System - Backend API"
 3. If not working, check MongoDB connection
 
@@ -144,7 +144,7 @@ http://10.0.2.2:5000/api
 ### **iOS Simulator**
 ```bash
 # API URL should use
-http://localhost:5000/api
+http://gate-pass-system-9vid.onrender.com/api
 ```
 
 ---

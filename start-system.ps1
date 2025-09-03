@@ -66,7 +66,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'Mobil
 # Step 5: Display information
 Write-Host "`n✅ System startup initiated!" -ForegroundColor Green
 Write-Host "📋 System Information:" -ForegroundColor Magenta
-Write-Host "🌐 Backend URL: http://localhost:5000" -ForegroundColor Cyan
+Write-Host "🌐 Backend URL: http://gate-pass-system-9vid.onrender.com" -ForegroundColor Cyan
 Write-Host "📱 Mobile App: Starting with Expo..." -ForegroundColor Cyan
 
 # Get IP address for mobile testing

@@ -106,7 +106,7 @@ NODE_ENV=development
 Update `src/services/api.js` with your backend URL:
 ```javascript
 // For localhost (emulator)
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://gate-pass-system-9vid.onrender.com/api';
 
 // For physical device (replace with your IP)
 const API_BASE_URL = 'http://192.168.1.100:5000/api';
